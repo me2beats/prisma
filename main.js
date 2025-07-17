@@ -55,6 +55,9 @@ canvas.addEventListener("pointermove", (e) => {
 
 canvas.addEventListener("pointerup", (e) => {
     if (e.pointerType === "touch") {
+        if (e.target.closest(".context-menu")) {
+            return;
+        }
         if (pressTimer === null && !isDragging) {
             contextMenu.style.display = "flex";
             contextMenu.style.left = `${e.clientX}px`;
