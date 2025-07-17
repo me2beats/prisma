@@ -50,6 +50,9 @@
             user-select: none;
             color: white;
         }
+        #toolbar button.active {
+            background-color: rgba(0, 120, 215, 0.5);
+        }
         .context-menu {
             position: absolute;
             display: none;
@@ -88,7 +91,7 @@
             <span class="material-icons">touch_app</span>
         </button>
         <button id="translate">
-            <span class="material-icons">open_with</span>
+            <span class="material-icons">open_in_full</span>
         </button>
     </div>
     <canvas id="renderCanvas"></canvas>

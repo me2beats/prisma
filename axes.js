@@ -1,10 +1,6 @@
 export function createAxes(scene, size) {
     const halfSize = size / 2;
 
-    const center = BABYLON.MeshBuilder.CreateSphere("center", {diameter: 0.2}, scene);
-    center.material = new BABYLON.StandardMaterial("centerMat", scene);
-    center.material.emissiveColor = new BABYLON.Color3.Red();
-
     const axisX = BABYLON.MeshBuilder.CreateLines("axisX", {
         points: [
             new BABYLON.Vector3(-halfSize, 0, 0), new BABYLON.Vector3(halfSize, 0, 0)
