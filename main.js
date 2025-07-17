@@ -60,8 +60,8 @@ const createScene = function () {
     }
 
     function updateGrid() {
-        const cameraPos = camera.position;
-        const currentChunkId = getChunkId(cameraPos.x, cameraPos.z);
+        const cameraTarget = camera.target;
+        const currentChunkId = getChunkId(cameraTarget.x, cameraTarget.z);
 
         const renderDistance = 2;
         const [cx, cz] = currentChunkId.split('_').map(Number);
