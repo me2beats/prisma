@@ -87,3 +87,8 @@ addButton.addEventListener("pointerenter", () => {
     addSubmenu.style.left = `${rect.right}px`;
     addSubmenu.style.top = `${rect.top}px`;
 });
+
+addSubmenu.addEventListener("click", () => {
+    contextMenu.style.display = "none";
+    addSubmenu.style.display = "none";
+});
