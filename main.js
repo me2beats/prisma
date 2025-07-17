@@ -19,6 +19,36 @@ window.addEventListener("resize", function () {
     engine.resize();
 });
 
+let currentMode = "navigate";
+const selectedMeshes = [];
+const highlightLayer = new BABYLON.HighlightLayer("hl1", scene);
+
+const navigateButton = document.getElementById("navigate");
+const selectButton = document.getElementById("select");
+const translateButton = document.getElementById("translate");
+
+navigateButton.addEventListener("click", () => {
+    currentMode = "navigate";
+    selectedMeshes.forEach(mesh => {
+        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
+        if (behavior) behavior.enabled = false;
+    });
+});
+selectButton.addEventListener("click", () => {
+    currentMode = "select";
+    selectedMeshes.forEach(mesh => {
+        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
+        if (behavior) behavior.enabled = false;
+    });
+});
+translateButton.addEventListener("click", () => {
+    currentMode = "translate";
+    selectedMeshes.forEach(mesh => {
+        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
+        if (behavior) behavior.enabled = true;
+    });
+});
+
 const contextMenu = document.getElementById("context-menu");
 const addSubmenu = document.getElementById("add-submenu");
 const addButton = document.getElementById("add");
@@ -29,7 +59,23 @@ let isDragging = false;
 let menuJustOpened = false;
 
 canvas.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "touch") {
+    if (currentMode === "select" && e.button === 0) {
+        const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
+        if (pickInfo.hit) {
+            const mesh = pickInfo.pickedMesh;
+            if (selectedMeshes.includes(mesh)) {
+                const index = selectedMeshes.indexOf(mesh);
+                selectedMeshes.splice(index, 1);
+                highlightLayer.removeMesh(mesh);
+                mesh.removeBehavior(mesh.behaviors.find(b => b.name === "PointerDrag"));
+            } else {
+                selectedMeshes.push(mesh);
+                highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
+                const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
+                mesh.addBehavior(pointerDragBehavior);
+            }
+        }
+    } else if (e.pointerType === "touch") {
         startX = e.clientX;
         startY = e.clientY;
         isDragging = false;
