@@ -1,4 +1,4 @@
-import { createScene } from './scene.js';
+import { createScene, createTriangle } from './scene.js';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 
@@ -88,7 +88,10 @@ addButton.addEventListener("pointerenter", () => {
     addSubmenu.style.top = `${rect.top}px`;
 });
 
-addSubmenu.addEventListener("click", () => {
+addSubmenu.addEventListener("click", (e) => {
+    if (e.target.textContent === "Triangle") {
+        createTriangle(scene);
+    }
     contextMenu.style.display = "none";
     addSubmenu.style.display = "none";
 });
