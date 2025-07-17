@@ -17,13 +17,54 @@
             height: 100%;
             touch-action: none;
         }
+        #gui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px;
+        }
+        #gui button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: -4px;
+            user-select: none;
+        }
+        #toolbar {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        #toolbar button {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: none;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            user-select: none;
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
 </head>
 <body>
+    <div id="gui">
+        <button>File</button>
+        <button>Settings</button>
+    </div>
+    <div id="toolbar">
+        <button id="navigate">
+            <img src="https://www.svgrepo.com/show/493798/arrow-move.svg" width="20" height="20" alt="Navigate">
+        </button>
+    </div>
     <canvas id="renderCanvas"></canvas>
-    <script src="main.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
