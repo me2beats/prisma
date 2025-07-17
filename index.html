@@ -50,21 +50,27 @@
             user-select: none;
             color: white;
         }
+        #toolbar button.active {
+            background-color: rgba(0, 120, 215, 0.5);
+        }
         .context-menu {
             position: absolute;
             display: none;
             flex-direction: column;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 5px;
+            background-color: transparent;
         }
         .context-menu button {
-            background-color: transparent;
+            background-color: rgba(0, 0, 0, 0.5);
             color: white;
             border: none;
             padding: 10px 20px;
             cursor: pointer;
             text-align: left;
             user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            margin: 0;
         }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -80,6 +86,12 @@
     <div id="toolbar">
         <button id="navigate">
             <span class="material-icons">open_with</span>
+        </button>
+        <button id="select">
+            <span class="material-icons">touch_app</span>
+        </button>
+        <button id="translate">
+            <span class="material-icons">open_in_full</span>
         </button>
     </div>
     <canvas id="renderCanvas"></canvas>

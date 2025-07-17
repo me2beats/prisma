@@ -1,4 +1,4 @@
-import { createScene } from './scene.js';
+import { createScene, createTriangle } from './scene.js';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 
@@ -19,6 +19,52 @@ window.addEventListener("resize", function () {
     engine.resize();
 });
 
+let currentMode = "navigate";
+const selectedMeshes = [];
+const highlightLayer = new BABYLON.HighlightLayer("hl1", scene);
+
+const navigateButton = document.getElementById("navigate");
+const selectButton = document.getElementById("select");
+const translateButton = document.getElementById("translate");
+const toolbarButtons = [navigateButton, selectButton, translateButton];
+
+function updateToolbar() {
+    toolbarButtons.forEach(button => {
+        if (button.id === currentMode) {
+            button.classList.add("active");
+        } else {
+            button.classList.remove("active");
+        }
+    });
+}
+
+navigateButton.addEventListener("click", () => {
+    currentMode = "navigate";
+    updateToolbar();
+    selectedMeshes.forEach(mesh => {
+        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
+        if (behavior) behavior.enabled = false;
+    });
+});
+selectButton.addEventListener("click", () => {
+    currentMode = "select";
+    updateToolbar();
+    selectedMeshes.forEach(mesh => {
+        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
+        if (behavior) behavior.enabled = false;
+    });
+});
+translateButton.addEventListener("click", () => {
+    currentMode = "translate";
+    updateToolbar();
+    selectedMeshes.forEach(mesh => {
+        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
+        if (behavior) behavior.enabled = true;
+    });
+});
+
+updateToolbar();
+
 const contextMenu = document.getElementById("context-menu");
 const addSubmenu = document.getElementById("add-submenu");
 const addButton = document.getElementById("add");
@@ -26,19 +72,42 @@ const addButton = document.getElementById("add");
 let pressTimer;
 let startX, startY;
 let isDragging = false;
+let menuJustOpened = false;
 
 canvas.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "touch") {
-        startX = e.clientX;
-        startY = e.clientY;
-        isDragging = false;
-        pressTimer = window.setTimeout(() => {
-            pressTimer = null; // Timer finished, but don't show menu yet
-        }, 500);
-    } else if (e.button === 2) {
-        contextMenu.style.display = "flex";
-        contextMenu.style.left = `${e.clientX}px`;
-        contextMenu.style.top = `${e.clientY}px`;
+    if (e.button !== 0) {
+        if (e.pointerType === "touch") {
+            startX = e.clientX;
+            startY = e.clientY;
+            isDragging = false;
+            pressTimer = window.setTimeout(() => {
+                pressTimer = null; // Timer finished, but don't show menu yet
+            }, 500);
+        } else if (e.button === 2) {
+            contextMenu.style.display = "flex";
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
+        }
+        return;
+    }
+
+    if (currentMode === "select") {
+        const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
+        if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
+            const mesh = pickInfo.pickedMesh;
+            if (selectedMeshes.includes(mesh)) {
+                const index = selectedMeshes.indexOf(mesh);
+                selectedMeshes.splice(index, 1);
+                highlightLayer.removeMesh(mesh);
+                mesh.removeBehavior(mesh.behaviors.find(b => b.name === "PointerDrag"));
+            } else {
+                selectedMeshes.push(mesh);
+                highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
+                const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
+                pointerDragBehavior.enabled = false;
+                mesh.addBehavior(pointerDragBehavior);
+            }
+        }
     }
 });
 
@@ -55,15 +124,24 @@ canvas.addEventListener("pointermove", (e) => {
 
 canvas.addEventListener("pointerup", (e) => {
     if (e.pointerType === "touch") {
-        if (e.target.closest(".context-menu")) {
-            return;
-        }
         if (pressTimer === null && !isDragging) {
             contextMenu.style.display = "flex";
             contextMenu.style.left = `${e.clientX}px`;
             contextMenu.style.top = `${e.clientY}px`;
+            menuJustOpened = true;
         }
         clearTimeout(pressTimer);
+    }
+});
+
+window.addEventListener("pointerup", (e) => {
+    if (menuJustOpened) {
+        menuJustOpened = false;
+        return;
+    }
+    if (!e.target.closest(".context-menu")) {
+        contextMenu.style.display = "none";
+        addSubmenu.style.display = "none";
     }
 });
 
@@ -78,16 +156,10 @@ addButton.addEventListener("pointerenter", () => {
     addSubmenu.style.top = `${rect.top}px`;
 });
 
-contextMenu.addEventListener("pointerleave", (e) => {
-    if (!e.relatedTarget || !e.relatedTarget.closest("#add-submenu")) {
-        contextMenu.style.display = "none";
-        addSubmenu.style.display = "none";
+addSubmenu.addEventListener("click", (e) => {
+    if (e.target.textContent === "Triangle") {
+        createTriangle(scene);
     }
-});
-
-addSubmenu.addEventListener("pointerleave", (e) => {
-    if (!e.relatedTarget || !e.relatedTarget.closest("#context-menu")) {
-        contextMenu.style.display = "none";
-        addSubmenu.style.display = "none";
-    }
+    contextMenu.style.display = "none";
+    addSubmenu.style.display = "none";
 });
