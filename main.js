@@ -1,26 +1,63 @@
-import * as THREE from 'https://cdn.skypack.dev/three@0.129.0';
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const createScene = function () {
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3.Black();
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
+    const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(0, 0, 0), scene);
+    camera.attachControl(canvas, true);
 
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
+    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-camera.position.z = 5;
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 10, height: 10}, scene);
 
-function animate() {
-	requestAnimationFrame( animate );
+    const center = BABYLON.MeshBuilder.CreateSphere("center", {diameter: 0.2}, scene);
+    center.material = new BABYLON.StandardMaterial("centerMat", scene);
+    center.material.emissiveColor = new BABYLON.Color3.Red();
 
-	cube.rotation.x += 0.01;
-	cube.rotation.y += 0.01;
+    const makeTextPlane = function (text, color, size) {
+        const dynamicTexture = new BABYLON.DynamicTexture("DynamicTexture", 50, scene, true);
+        dynamicTexture.hasAlpha = true;
+        dynamicTexture.drawText(text, 5, 40, "bold 36px Arial", color, "transparent", true);
+        const plane = new BABYLON.Mesh.CreatePlane("TextPlane", size, scene, true);
+        plane.material = new BABYLON.StandardMaterial("TextPlaneMaterial", scene);
+        plane.material.backFaceCulling = false;
+        plane.material.specularColor = new BABYLON.Color3(0, 0, 0);
+        plane.material.diffuseTexture = dynamicTexture;
+        return plane;
+    };
 
-	renderer.render( scene, camera );
+    const axisX = BABYLON.MeshBuilder.CreateLines("axisX", {
+        points: [
+            new BABYLON.Vector3.Zero(), new BABYLON.Vector3(5, 0, 0), new BABYLON.Vector3(5 * 0.95, 0.05 * 5, 0),
+            new BABYLON.Vector3(5, 0, 0), new BABYLON.Vector3(5 * 0.95, -0.05 * 5, 0)
+        ]
+    }, scene);
+    axisX.color = new BABYLON.Color3(1, 0, 0);
+    const xChar = makeTextPlane("X", "red", 1);
+    xChar.position = new BABYLON.Vector3(6, 0, 0);
+
+    const axisZ = BABYLON.MeshBuilder.CreateLines("axisZ", {
+        points: [
+            new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, 5), new BABYLON.Vector3(0, -0.05 * 5, 5 * 0.95),
+            new BABYLON.Vector3(0, 0, 5), new BABYLON.Vector3(0, 0.05 * 5, 5 * 0.95)
+        ]
+    }, scene);
+    axisZ.color = new BABYLON.Color3(0, 0, 1);
+    const zChar = makeTextPlane("Z", "blue", 1);
+    zChar.position = new BABYLON.Vector3(0, 0, 6);
+
+
+    return scene;
 };
 
-animate();
+const scene = createScene();
+
+engine.runRenderLoop(function () {
+    scene.render();
+});
+
+window.addEventListener("resize", function () {
+    engine.resize();
+});
