@@ -5,7 +5,7 @@ import { createAxes } from './axes.js';
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
-const scene = createScene(engine, canvas);
+const { scene, camera } = createScene(engine, canvas);
 const size = 50;
 
 createGrid(scene, size);
@@ -47,6 +47,14 @@ function toggleMode(mode) {
     }
     updateToolbar();
     updateDragBehavior();
+
+    if (mode === "navigate") {
+        if (activeModes.includes("navigate")) {
+            camera.attachControl(canvas, true);
+        } else {
+            camera.detachControl(canvas);
+        }
+    }
 }
 
 function updateDragBehavior() {
@@ -73,23 +81,26 @@ let isDragging = false;
 let menuJustOpened = false;
 
 canvas.addEventListener("pointerdown", (e) => {
-    const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
-
-    if (e.pointerType === "touch") {
+    // Context menu on right-click or long-press
+    if (e.button === 2 || (e.pointerType === "touch" && e.button === 0)) {
         startX = e.clientX;
         startY = e.clientY;
         isDragging = false;
         pressTimer = window.setTimeout(() => {
-            pressTimer = null; // Timer finished, but don't show menu yet
+            if (!isDragging) {
+                contextMenu.style.display = "flex";
+                contextMenu.style.left = `${e.clientX}px`;
+                contextMenu.style.top = `${e.clientY}px`;
+            }
         }, 500);
-    } else if (e.button === 2) { // Right-click
-        contextMenu.style.display = "flex";
-        contextMenu.style.left = `${e.clientX}px`;
-        contextMenu.style.top = `${e.clientY}px`;
-    } else if (e.button === 0) { // Left-click
-        if (activeModes.includes("translate") && pickInfo.hit && selectedMeshes.includes(pickInfo.pickedMesh)) {
-            // Dragging selected mesh handled by PointerDragBehavior
-        } else if (activeModes.includes("select")) {
+    }
+
+    // Main interaction logic
+    if (e.button === 0) {
+        const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
+
+        // Selection
+        if (activeModes.includes("select")) {
             if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
                 const mesh = pickInfo.pickedMesh;
                 if (selectedMeshes.includes(mesh)) {
@@ -104,7 +115,14 @@ canvas.addEventListener("pointerdown", (e) => {
                     pointerDragBehavior.enabled = activeModes.includes("translate");
                     mesh.addBehavior(pointerDragBehavior);
                 }
+                return; // Prevent other actions when selecting
             }
+        }
+
+        // Translation
+        if (activeModes.includes("translate") && pickInfo.hit && selectedMeshes.includes(pickInfo.pickedMesh)) {
+            // Handled by PointerDragBehavior, but we need to prevent navigation
+            return;
         }
     }
 });
