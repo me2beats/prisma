@@ -50,6 +50,22 @@
             user-select: none;
             color: white;
         }
+        .context-menu {
+            position: absolute;
+            display: none;
+            flex-direction: column;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+        }
+        .context-menu button {
+            background-color: transparent;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            text-align: left;
+            user-select: none;
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
@@ -67,6 +83,14 @@
         </button>
     </div>
     <canvas id="renderCanvas"></canvas>
+    <div id="context-menu" class="context-menu">
+        <button id="add">Add</button>
+        <div id="add-submenu" class="context-menu">
+            <button>Triangle</button>
+            <button>Quad</button>
+            <button>Cube</button>
+        </div>
+    </div>
     <script type="module" src="main.js"></script>
 </body>
 </html>

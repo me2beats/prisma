@@ -18,3 +18,39 @@ engine.runRenderLoop(function () {
 window.addEventListener("resize", function () {
     engine.resize();
 });
+
+const contextMenu = document.getElementById("context-menu");
+const addSubmenu = document.getElementById("add-submenu");
+const addButton = document.getElementById("add");
+
+let pressTimer;
+
+canvas.addEventListener("pointerdown", (e) => {
+    if (e.button === 2 || e.pointerType === "touch") {
+        pressTimer = window.setTimeout(() => {
+            contextMenu.style.display = "flex";
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
+        }, 500);
+    }
+});
+
+canvas.addEventListener("pointerup", (e) => {
+    clearTimeout(pressTimer);
+});
+
+canvas.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+});
+
+addButton.addEventListener("pointerenter", () => {
+    addSubmenu.style.display = "flex";
+    const rect = addButton.getBoundingClientRect();
+    addSubmenu.style.left = `${rect.right}px`;
+    addSubmenu.style.top = `${rect.top}px`;
+});
+
+contextMenu.addEventListener("pointerleave", () => {
+    contextMenu.style.display = "none";
+    addSubmenu.style.display = "none";
+});
