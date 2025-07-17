@@ -10,12 +10,23 @@ const createScene = function () {
 
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 10, height: 10}, scene);
-    const groundMaterial = new BABYLON.GridMaterial("groundMaterial", scene);
-    groundMaterial.mainColor = new BABYLON.Color3(0.7, 0.7, 0.7);
-    groundMaterial.lineColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-    groundMaterial.gridRatio = 1;
-    ground.material = groundMaterial;
+    const createGrid = function (scene) {
+        const lines = [];
+        const size = 10;
+        const halfSize = size / 2;
+        const step = 1;
+        const color = new BABYLON.Color3(0.5, 0.5, 0.5);
+
+        for (let i = -halfSize; i <= halfSize; i += step) {
+            lines.push([new BABYLON.Vector3(i, 0, -halfSize), new BABYLON.Vector3(i, 0, halfSize)]);
+            lines.push([new BABYLON.Vector3(-halfSize, 0, i), new BABYLON.Vector3(halfSize, 0, i)]);
+        }
+
+        const lineSystem = BABYLON.MeshBuilder.CreateLineSystem("lineSystem", {lines: lines}, scene);
+        lineSystem.color = color;
+    };
+
+    createGrid(scene);
 
 
     const center = BABYLON.MeshBuilder.CreateSphere("center", {diameter: 0.2}, scene);
