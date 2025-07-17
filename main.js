@@ -18,3 +18,76 @@ engine.runRenderLoop(function () {
 window.addEventListener("resize", function () {
     engine.resize();
 });
+
+const contextMenu = document.getElementById("context-menu");
+const addSubmenu = document.getElementById("add-submenu");
+const addButton = document.getElementById("add");
+
+let pressTimer;
+let startX, startY;
+let isDragging = false;
+
+canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch") {
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = false;
+        pressTimer = window.setTimeout(() => {
+            pressTimer = null; // Timer finished, but don't show menu yet
+        }, 500);
+    } else if (e.button === 2) {
+        contextMenu.style.display = "flex";
+        contextMenu.style.left = `${e.clientX}px`;
+        contextMenu.style.top = `${e.clientY}px`;
+    }
+});
+
+canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch" && pressTimer) {
+        const distance = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
+        if (distance > 10) {
+            isDragging = true;
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        }
+    }
+});
+
+canvas.addEventListener("pointerup", (e) => {
+    if (e.pointerType === "touch") {
+        if (e.target.closest(".context-menu")) {
+            return;
+        }
+        if (pressTimer === null && !isDragging) {
+            contextMenu.style.display = "flex";
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
+        }
+        clearTimeout(pressTimer);
+    }
+});
+
+canvas.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+});
+
+addButton.addEventListener("pointerenter", () => {
+    addSubmenu.style.display = "flex";
+    const rect = addButton.getBoundingClientRect();
+    addSubmenu.style.left = `${rect.right}px`;
+    addSubmenu.style.top = `${rect.top}px`;
+});
+
+contextMenu.addEventListener("pointerleave", (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest("#add-submenu")) {
+        contextMenu.style.display = "none";
+        addSubmenu.style.display = "none";
+    }
+});
+
+addSubmenu.addEventListener("pointerleave", (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest("#context-menu")) {
+        contextMenu.style.display = "none";
+        addSubmenu.style.display = "none";
+    }
+});

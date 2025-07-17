@@ -48,11 +48,29 @@
             cursor: pointer;
             margin-bottom: 5px;
             user-select: none;
+            color: white;
+        }
+        .context-menu {
+            position: absolute;
+            display: none;
+            flex-direction: column;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+        }
+        .context-menu button {
+            background-color: transparent;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            text-align: left;
+            user-select: none;
         }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
     <div id="gui">
@@ -61,10 +79,18 @@
     </div>
     <div id="toolbar">
         <button id="navigate">
-            <img src="https://www.svgrepo.com/show/493798/arrow-move.svg" width="20" height="20" alt="Navigate">
+            <span class="material-icons">open_with</span>
         </button>
     </div>
     <canvas id="renderCanvas"></canvas>
+    <div id="context-menu" class="context-menu">
+        <button id="add">Add</button>
+    </div>
+    <div id="add-submenu" class="context-menu">
+        <button>Triangle</button>
+        <button>Quad</button>
+        <button>Cube</button>
+    </div>
     <script type="module" src="main.js"></script>
 </body>
 </html>
