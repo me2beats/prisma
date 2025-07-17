@@ -1,4 +1,4 @@
-export function createScene(engine) {
+export function createScene(engine, canvas) {
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0.2, 0.2, 0.2);
 
