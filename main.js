@@ -7,13 +7,15 @@ const createScene = function () {
 
     const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(0, 0, 0), scene);
     camera.attachControl(canvas, true);
+    camera.lowerRadiusLimit = 1;
 
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
+    const size = 50;
+    const halfSize = size / 2;
+
     const createGrid = function (scene) {
         const lines = [];
-        const size = 50;
-        const halfSize = size / 2;
         const step = 1;
         const color = new BABYLON.Color3(0.4, 0.4, 0.4);
 
@@ -36,14 +38,14 @@ const createScene = function () {
 
     const axisX = BABYLON.MeshBuilder.CreateLines("axisX", {
         points: [
-            new BABYLON.Vector3(-5, 0, 0), new BABYLON.Vector3(5, 0, 0)
+            new BABYLON.Vector3(-halfSize, 0, 0), new BABYLON.Vector3(halfSize, 0, 0)
         ]
     }, scene);
     axisX.color = new BABYLON.Color3(1, 0, 0);
 
     const axisZ = BABYLON.MeshBuilder.CreateLines("axisZ", {
         points: [
-            new BABYLON.Vector3(0, 0, -5), new BABYLON.Vector3(0, 0, 5)
+            new BABYLON.Vector3(0, 0, -halfSize), new BABYLON.Vector3(0, 0, halfSize)
         ]
     }, scene);
     axisZ.color = new BABYLON.Color3(0, 0, 1);
