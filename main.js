@@ -12,12 +12,13 @@ const createScene = function () {
 
     const createGrid = function (scene) {
         const lines = [];
-        const size = 10;
+        const size = 50;
         const halfSize = size / 2;
         const step = 1;
-        const color = new BABYLON.Color3(0.5, 0.5, 0.5);
+        const color = new BABYLON.Color3(0.4, 0.4, 0.4);
 
         for (let i = -halfSize; i <= halfSize; i += step) {
+            if (i === 0) continue;
             lines.push([new BABYLON.Vector3(i, 0, -halfSize), new BABYLON.Vector3(i, 0, halfSize)]);
             lines.push([new BABYLON.Vector3(-halfSize, 0, i), new BABYLON.Vector3(halfSize, 0, i)]);
         }
@@ -35,14 +36,14 @@ const createScene = function () {
 
     const axisX = BABYLON.MeshBuilder.CreateLines("axisX", {
         points: [
-            new BABYLON.Vector3.Zero(), new BABYLON.Vector3(5, 0, 0)
+            new BABYLON.Vector3(-5, 0, 0), new BABYLON.Vector3(5, 0, 0)
         ]
     }, scene);
     axisX.color = new BABYLON.Color3(1, 0, 0);
 
     const axisZ = BABYLON.MeshBuilder.CreateLines("axisZ", {
         points: [
-            new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, 5)
+            new BABYLON.Vector3(0, 0, -5), new BABYLON.Vector3(0, 0, 5)
         ]
     }, scene);
     axisZ.color = new BABYLON.Color3(0, 0, 1);
