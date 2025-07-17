@@ -71,23 +71,32 @@ canvas.addEventListener("contextmenu", (e) => {
     e.preventDefault();
 });
 
+let menuLeaveTimer;
+
+function hideMenus() {
+    contextMenu.style.display = "none";
+    addSubmenu.style.display = "none";
+}
+
+function cancelHideMenus() {
+    clearTimeout(menuLeaveTimer);
+}
+
 addButton.addEventListener("pointerenter", () => {
+    cancelHideMenus();
     addSubmenu.style.display = "flex";
     const rect = addButton.getBoundingClientRect();
     addSubmenu.style.left = `${rect.right}px`;
     addSubmenu.style.top = `${rect.top}px`;
 });
 
-contextMenu.addEventListener("pointerleave", (e) => {
-    if (!e.relatedTarget || !e.relatedTarget.closest("#add-submenu")) {
-        contextMenu.style.display = "none";
-        addSubmenu.style.display = "none";
-    }
+contextMenu.addEventListener("pointerenter", cancelHideMenus);
+addSubmenu.addEventListener("pointerenter", cancelHideMenus);
+
+contextMenu.addEventListener("pointerleave", () => {
+    menuLeaveTimer = setTimeout(hideMenus, 100);
 });
 
-addSubmenu.addEventListener("pointerleave", (e) => {
-    if (!e.relatedTarget || !e.relatedTarget.closest("#context-menu")) {
-        contextMenu.style.display = "none";
-        addSubmenu.style.display = "none";
-    }
+addSubmenu.addEventListener("pointerleave", () => {
+    menuLeaveTimer = setTimeout(hideMenus, 100);
 });
