@@ -55,9 +55,6 @@ canvas.addEventListener("pointermove", (e) => {
 
 canvas.addEventListener("pointerup", (e) => {
     if (e.pointerType === "touch") {
-        if (e.target.closest(".context-menu")) {
-            return;
-        }
         if (pressTimer === null && !isDragging) {
             contextMenu.style.display = "flex";
             contextMenu.style.left = `${e.clientX}px`;
@@ -67,36 +64,20 @@ canvas.addEventListener("pointerup", (e) => {
     }
 });
 
+window.addEventListener("pointerup", (e) => {
+    if (!e.target.closest(".context-menu")) {
+        contextMenu.style.display = "none";
+        addSubmenu.style.display = "none";
+    }
+});
+
 canvas.addEventListener("contextmenu", (e) => {
     e.preventDefault();
 });
 
-let menuLeaveTimer;
-
-function hideMenus() {
-    contextMenu.style.display = "none";
-    addSubmenu.style.display = "none";
-}
-
-function cancelHideMenus() {
-    clearTimeout(menuLeaveTimer);
-}
-
 addButton.addEventListener("pointerenter", () => {
-    cancelHideMenus();
     addSubmenu.style.display = "flex";
     const rect = addButton.getBoundingClientRect();
     addSubmenu.style.left = `${rect.right}px`;
     addSubmenu.style.top = `${rect.top}px`;
-});
-
-contextMenu.addEventListener("pointerenter", cancelHideMenus);
-addSubmenu.addEventListener("pointerenter", cancelHideMenus);
-
-contextMenu.addEventListener("pointerleave", () => {
-    menuLeaveTimer = setTimeout(hideMenus, 100);
-});
-
-addSubmenu.addEventListener("pointerleave", () => {
-    menuLeaveTimer = setTimeout(hideMenus, 100);
 });
