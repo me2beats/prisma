@@ -25,19 +25,15 @@ const addButton = document.getElementById("add");
 
 let pressTimer;
 let startX, startY;
+let isDragging = false;
 
 canvas.addEventListener("pointerdown", (e) => {
     if (e.pointerType === "touch") {
         startX = e.clientX;
         startY = e.clientY;
+        isDragging = false;
         pressTimer = window.setTimeout(() => {
-            const distance = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
-            if (distance < 10) { // Threshold to differentiate between tap and drag
-                contextMenu.style.display = "flex";
-                contextMenu.style.left = `${startX}px`;
-                contextMenu.style.top = `${startY}px`;
-            }
-            pressTimer = null;
+            pressTimer = null; // Timer finished, but don't show menu yet
         }, 500);
     } else if (e.button === 2) {
         contextMenu.style.display = "flex";
@@ -46,11 +42,25 @@ canvas.addEventListener("pointerdown", (e) => {
     }
 });
 
+canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch" && pressTimer) {
+        const distance = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
+        if (distance > 10) {
+            isDragging = true;
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        }
+    }
+});
+
 canvas.addEventListener("pointerup", (e) => {
     if (e.pointerType === "touch") {
-        if (pressTimer) {
-            clearTimeout(pressTimer);
+        if (pressTimer === null && !isDragging) {
+            contextMenu.style.display = "flex";
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
         }
+        clearTimeout(pressTimer);
     }
 });
 
@@ -65,7 +75,16 @@ addButton.addEventListener("pointerenter", () => {
     addSubmenu.style.top = `${rect.top}px`;
 });
 
-contextMenu.addEventListener("pointerleave", () => {
-    contextMenu.style.display = "none";
-    addSubmenu.style.display = "none";
+contextMenu.addEventListener("pointerleave", (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest("#add-submenu")) {
+        contextMenu.style.display = "none";
+        addSubmenu.style.display = "none";
+    }
+});
+
+addSubmenu.addEventListener("pointerleave", (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest("#context-menu")) {
+        contextMenu.style.display = "none";
+        addSubmenu.style.display = "none";
+    }
 });
