@@ -26,6 +26,7 @@ const addButton = document.getElementById("add");
 let pressTimer;
 let startX, startY;
 let isDragging = false;
+let menuJustOpened = false;
 
 canvas.addEventListener("pointerdown", (e) => {
     if (e.pointerType === "touch") {
@@ -59,12 +60,17 @@ canvas.addEventListener("pointerup", (e) => {
             contextMenu.style.display = "flex";
             contextMenu.style.left = `${e.clientX}px`;
             contextMenu.style.top = `${e.clientY}px`;
+            menuJustOpened = true;
         }
         clearTimeout(pressTimer);
     }
 });
 
 window.addEventListener("pointerup", (e) => {
+    if (menuJustOpened) {
+        menuJustOpened = false;
+        return;
+    }
     if (!e.target.closest(".context-menu")) {
         contextMenu.style.display = "none";
         addSubmenu.style.display = "none";
