@@ -24,19 +24,34 @@ const addSubmenu = document.getElementById("add-submenu");
 const addButton = document.getElementById("add");
 
 let pressTimer;
+let startX, startY;
 
 canvas.addEventListener("pointerdown", (e) => {
-    if (e.button === 2 || e.pointerType === "touch") {
+    if (e.pointerType === "touch") {
+        startX = e.clientX;
+        startY = e.clientY;
         pressTimer = window.setTimeout(() => {
-            contextMenu.style.display = "flex";
-            contextMenu.style.left = `${e.clientX}px`;
-            contextMenu.style.top = `${e.clientY}px`;
+            // Long press detected, do nothing until pointerup
         }, 500);
+    } else if (e.button === 2) {
+        contextMenu.style.display = "flex";
+        contextMenu.style.left = `${e.clientX}px`;
+        contextMenu.style.top = `${e.clientY}px`;
     }
 });
 
 canvas.addEventListener("pointerup", (e) => {
-    clearTimeout(pressTimer);
+    if (e.pointerType === "touch") {
+        clearTimeout(pressTimer);
+        const endX = e.clientX;
+        const endY = e.clientY;
+        const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+        if (distance < 10) { // Threshold to differentiate between tap and drag
+            contextMenu.style.display = "flex";
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
+        }
+    }
 });
 
 canvas.addEventListener("contextmenu", (e) => {
@@ -46,7 +61,7 @@ canvas.addEventListener("contextmenu", (e) => {
 addButton.addEventListener("pointerenter", () => {
     addSubmenu.style.display = "flex";
     const rect = addButton.getBoundingClientRect();
-    addSubmenu.style.left = `${rect.right}px`;
+    addSubmenu.style.left = `${rect.right - 5}px`;
     addSubmenu.style.top = `${rect.top}px`;
 });
 
