@@ -19,7 +19,7 @@ window.addEventListener("resize", function () {
     engine.resize();
 });
 
-let currentMode = "navigate";
+let activeModes = ["navigate"];
 const selectedMeshes = [];
 const highlightLayer = new BABYLON.HighlightLayer("hl1", scene);
 
@@ -30,7 +30,7 @@ const toolbarButtons = [navigateButton, selectButton, translateButton];
 
 function updateToolbar() {
     toolbarButtons.forEach(button => {
-        if (button.id === currentMode) {
+        if (activeModes.includes(button.id)) {
             button.classList.add("active");
         } else {
             button.classList.remove("active");
@@ -38,30 +38,28 @@ function updateToolbar() {
     });
 }
 
-navigateButton.addEventListener("click", () => {
-    currentMode = "navigate";
+function toggleMode(mode) {
+    const index = activeModes.indexOf(mode);
+    if (index === -1) {
+        activeModes.push(mode);
+    } else {
+        activeModes.splice(index, 1);
+    }
     updateToolbar();
+    updateDragBehavior();
+}
+
+function updateDragBehavior() {
+    const translateEnabled = activeModes.includes("translate");
     selectedMeshes.forEach(mesh => {
         const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
-        if (behavior) behavior.enabled = false;
+        if (behavior) behavior.enabled = translateEnabled;
     });
-});
-selectButton.addEventListener("click", () => {
-    currentMode = "select";
-    updateToolbar();
-    selectedMeshes.forEach(mesh => {
-        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
-        if (behavior) behavior.enabled = false;
-    });
-});
-translateButton.addEventListener("click", () => {
-    currentMode = "translate";
-    updateToolbar();
-    selectedMeshes.forEach(mesh => {
-        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
-        if (behavior) behavior.enabled = true;
-    });
-});
+}
+
+navigateButton.addEventListener("click", () => toggleMode("navigate"));
+selectButton.addEventListener("click", () => toggleMode("select"));
+translateButton.addEventListener("click", () => toggleMode("translate"));
 
 updateToolbar();
 
@@ -75,37 +73,37 @@ let isDragging = false;
 let menuJustOpened = false;
 
 canvas.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) {
-        if (e.pointerType === "touch") {
-            startX = e.clientX;
-            startY = e.clientY;
-            isDragging = false;
-            pressTimer = window.setTimeout(() => {
-                pressTimer = null; // Timer finished, but don't show menu yet
-            }, 500);
-        } else if (e.button === 2) {
-            contextMenu.style.display = "flex";
-            contextMenu.style.left = `${e.clientX}px`;
-            contextMenu.style.top = `${e.clientY}px`;
-        }
-        return;
-    }
+    const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
 
-    if (currentMode === "select") {
-        const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
-        if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
-            const mesh = pickInfo.pickedMesh;
-            if (selectedMeshes.includes(mesh)) {
-                const index = selectedMeshes.indexOf(mesh);
-                selectedMeshes.splice(index, 1);
-                highlightLayer.removeMesh(mesh);
-                mesh.removeBehavior(mesh.behaviors.find(b => b.name === "PointerDrag"));
-            } else {
-                selectedMeshes.push(mesh);
-                highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
-                const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
-                pointerDragBehavior.enabled = false;
-                mesh.addBehavior(pointerDragBehavior);
+    if (e.pointerType === "touch") {
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = false;
+        pressTimer = window.setTimeout(() => {
+            pressTimer = null; // Timer finished, but don't show menu yet
+        }, 500);
+    } else if (e.button === 2) { // Right-click
+        contextMenu.style.display = "flex";
+        contextMenu.style.left = `${e.clientX}px`;
+        contextMenu.style.top = `${e.clientY}px`;
+    } else if (e.button === 0) { // Left-click
+        if (activeModes.includes("translate") && pickInfo.hit && selectedMeshes.includes(pickInfo.pickedMesh)) {
+            // Dragging selected mesh handled by PointerDragBehavior
+        } else if (activeModes.includes("select")) {
+            if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
+                const mesh = pickInfo.pickedMesh;
+                if (selectedMeshes.includes(mesh)) {
+                    const index = selectedMeshes.indexOf(mesh);
+                    selectedMeshes.splice(index, 1);
+                    highlightLayer.removeMesh(mesh);
+                    mesh.removeBehavior(mesh.behaviors.find(b => b.name === "PointerDrag"));
+                } else {
+                    selectedMeshes.push(mesh);
+                    highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
+                    const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
+                    pointerDragBehavior.enabled = activeModes.includes("translate");
+                    mesh.addBehavior(pointerDragBehavior);
+                }
             }
         }
     }
