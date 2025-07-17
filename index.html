@@ -17,12 +17,29 @@
             height: 100%;
             touch-action: none;
         }
+        #gui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px;
+        }
+        #gui button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid white;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
 </head>
 <body>
+    <div id="gui">
+        <button>File</button>
+        <button>Settings</button>
+    </div>
     <canvas id="renderCanvas"></canvas>
     <script type="module" src="main.js"></script>
 </body>
