@@ -1,20 +1,11 @@
 import { createScene, createTriangle } from './scene.js';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
+import { log } from './logger.js';
 import "https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js";
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
-
-const debugOverlay = document.getElementById("debug-overlay");
-
-function log(message) {
-    const p = document.createElement("p");
-    p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-    debugOverlay.appendChild(p);
-    debugOverlay.scrollTop = debugOverlay.scrollHeight;
-    console.log(message);
-}
 
 const { scene, camera } = createScene(engine, canvas);
 const size = 50;
