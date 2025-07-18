@@ -91,6 +91,7 @@ canvas.addEventListener("pointerdown", (e) => {
                 contextMenu.style.display = "flex";
                 contextMenu.style.left = `${e.clientX}px`;
                 contextMenu.style.top = `${e.clientY}px`;
+                menuJustOpened = true;
             }
         }, 500);
     }
