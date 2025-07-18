@@ -81,10 +81,17 @@ fileButton.addEventListener("click", () => {
 const exportButton = document.getElementById("export-gltf");
 exportButton.addEventListener("click", () => {
     const meshesToExport = scene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
-    GLTF2Export.GLTFAsync(scene, "scene", {
+    BABYLON.GLTF2Export.GLTFAsync(scene, "scene", {
         shouldExportNode: (node) => meshesToExport.includes(node)
     }).then((gltf) => {
-        gltf.downloadFiles();
+        const gltfString = JSON.stringify(gltf.glTFFiles["scene.gltf"]);
+        const blob = new Blob([gltfString], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "scene.gltf";
+        a.click();
+        URL.revokeObjectURL(url);
     });
 });
 
