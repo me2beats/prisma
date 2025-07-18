@@ -1,6 +1,7 @@
 import { createScene, createTriangle } from './scene.js';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
+import "https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js";
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
