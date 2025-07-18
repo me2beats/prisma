@@ -109,7 +109,7 @@ importButton.addEventListener("click", () => {
             const data = event.target.result;
             console.log("File data:", data);
             console.log("Scene object:", scene);
-            BABYLON.SceneLoader.ImportMesh("", "", "data:" + data, scene, (meshes) => {
+            BABYLON.SceneLoader.ImportMesh("", "", data, scene, (meshes) => {
                 console.log("Meshes imported successfully:", meshes);
                 const material = new BABYLON.StandardMaterial("importedMat", scene);
                 material.emissiveColor = new BABYLON.Color3(1, 1, 1);
