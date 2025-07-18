@@ -72,6 +72,19 @@
             -ms-user-select: none;
             margin: 0;
         }
+        #debug-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
@@ -109,5 +122,6 @@
         <button>Cube</button>
     </div>
     <script type="module" src="main.js"></script>
+    <div id="debug-overlay"></div>
 </body>
 </html>

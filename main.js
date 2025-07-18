@@ -5,6 +5,16 @@ import { createAxes } from './axes.js';
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
+const debugOverlay = document.getElementById("debug-overlay");
+
+function log(message) {
+    const p = document.createElement("p");
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    debugOverlay.appendChild(p);
+    debugOverlay.scrollTop = debugOverlay.scrollHeight;
+    console.log(message);
+}
+
 const { scene, camera } = createScene(engine, canvas);
 const size = 50;
 
@@ -104,22 +114,35 @@ importButton.addEventListener("click", () => {
     input.accept = ".gltf, .glb";
     input.onchange = async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file) {
+            log("No file selected.");
+            return;
+        }
+        log(`File selected: ${file.name}`);
 
         try {
+            log("Reading file content...");
             const fileContent = await file.arrayBuffer();
+            log("File content read successfully.");
+
             const fileData = new Blob([fileContent]);
             const url = URL.createObjectURL(fileData);
+            log(`Blob URL created: ${url}`);
 
+            log("Starting mesh import...");
             const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync("", url, "", scene, null, ".glb");
+            log(`Meshes imported successfully: ${meshes.length} meshes found.`);
 
-            console.log("Meshes imported successfully:", meshes);
+            log("Applying material to meshes...");
             const material = new BABYLON.StandardMaterial("importedMat", scene);
             material.emissiveColor = new BABYLON.Color3(1, 1, 1);
             meshes.forEach(mesh => mesh.material = material);
+            log("Material applied.");
+
             URL.revokeObjectURL(url);
+            log("Blob URL revoked.");
         } catch (error) {
-            console.error("Error importing mesh:", error);
+            log(`Error importing mesh: ${error.message}`);
         }
     };
     input.click();
