@@ -1,5 +1,4 @@
 import { createScene, createTriangle } from './scene.js';
-import { GLTF2Export } from 'babylonjs-serializers';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 
@@ -81,16 +80,25 @@ fileButton.addEventListener("click", () => {
 
 const exportButton = document.getElementById("export-gltf");
 exportButton.addEventListener("click", () => {
+    fileMenu.style.display = "none";
     const meshesToExport = scene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
-    GLTF2Export.GLTFAsync(scene, "scene", {
+    BABYLON.GLTF2Export.GLTFAsync(scene, "scene", {
         shouldExportNode: (node) => meshesToExport.includes(node)
     }).then((gltf) => {
-        gltf.downloadFiles();
+        const gltfString = JSON.stringify(gltf.glTFFiles["scene.gltf"]);
+        const blob = new Blob([gltfString], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "scene.gltf";
+        a.click();
+        URL.revokeObjectURL(url);
     });
 });
 
 const importButton = document.getElementById("import-gltf");
 importButton.addEventListener("click", () => {
+    fileMenu.style.display = "none";
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".gltf, .glb";
@@ -99,8 +107,15 @@ importButton.addEventListener("click", () => {
         const reader = new FileReader();
         reader.onload = (event) => {
             const data = event.target.result;
-            BABYLON.SceneLoader.ImportMesh("", "", "data:" + data, scene, (meshes) => {
-                console.log("Meshes imported successfully");
+            console.log("File data:", data);
+            console.log("Scene object:", scene);
+            BABYLON.SceneLoader.ImportMesh("", "", data, scene, (meshes) => {
+                console.log("Meshes imported successfully:", meshes);
+                const material = new BABYLON.StandardMaterial("importedMat", scene);
+                material.emissiveColor = new BABYLON.Color3(1, 1, 1);
+                meshes.forEach(mesh => mesh.material = material);
+            }, null, (scene, message, exception) => {
+                console.error("Error importing mesh:", message, exception);
             });
         };
         reader.readAsDataURL(file);
@@ -193,9 +208,10 @@ window.addEventListener("pointerup", (e) => {
         menuJustOpened = false;
         return;
     }
-    if (!e.target.closest(".context-menu")) {
+    if (!e.target.closest(".context-menu") && !e.target.closest("#gui")) {
         contextMenu.style.display = "none";
         addSubmenu.style.display = "none";
+        fileMenu.style.display = "none";
     }
 });
 
