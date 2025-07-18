@@ -1,5 +1,4 @@
 import { createScene, createTriangle } from './scene.js';
-import { GLTF2Export } from 'babylonjs-serializers';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 
