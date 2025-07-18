@@ -91,17 +91,26 @@ fileButton.addEventListener("click", () => {
 const exportButton = document.getElementById("export-gltf");
 exportButton.addEventListener("click", () => {
     fileMenu.style.display = "none";
+    log("Starting export...");
     const meshesToExport = scene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
+    log(`Exporting ${meshesToExport.length} meshes...`);
     BABYLON.GLTF2Export.GLBAsync(scene, "scene", {
         shouldExportNode: (node) => meshesToExport.includes(node)
     }).then((glb) => {
-        const blob = new Blob(glb.glTFFiles["scene.glb"], {type: "application/octet-stream"});
+        log("Export successful.");
+        const blob = new Blob([glb.glTFFiles["scene.glb"]], {type: "application/octet-stream"});
+        log("Blob created.");
         const url = URL.createObjectURL(blob);
+        log(`Blob URL created: ${url}`);
         const a = document.createElement("a");
         a.href = url;
         a.download = "scene.glb";
         a.click();
+        log("Download initiated.");
         URL.revokeObjectURL(url);
+        log("Blob URL revoked.");
+    }).catch((error) => {
+        log(`Export failed: ${error.message}`);
     });
 });
 
@@ -129,6 +138,7 @@ importButton.addEventListener("click", () => {
             log(`Blob URL created: ${url}`);
 
             log("Starting mesh import...");
+            BABYLON.GLTFFileLoader.IncrementalLoading = false;
             const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync(null, url, "", scene);
             log(`Meshes imported successfully: ${meshes.length} meshes found.`);
 
