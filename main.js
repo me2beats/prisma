@@ -123,7 +123,7 @@ importButton.addEventListener("click", () => {
             log(`Blob URL created: ${url}`);
 
             log("Starting mesh import...");
-            const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync("", url, "", scene, null, ".glb");
+            const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync(null, url, "", scene);
             log(`Meshes imported successfully: ${meshes.length} meshes found.`);
 
             log("Applying material to meshes...");
