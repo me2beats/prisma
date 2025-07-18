@@ -144,14 +144,26 @@ importButton.addEventListener("click", () => {
                 log("Applying material to meshes...");
                 const material = new BABYLON.StandardMaterial("importedMat", scene);
                 material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-                loadedScene.meshes.forEach(mesh => mesh.material = material);
+                const importedMeshes = loadedScene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
+                importedMeshes.forEach(mesh => {
+                    mesh.material = material;
+                });
                 log("Material applied.");
+
+                if (importedMeshes.length > 0) {
+                    const boundingBox = BABYLON.BoundingBox.FromMeshes(importedMeshes);
+                    camera.target = boundingBox.center;
+                    camera.radius = boundingBox.extendSize.length() * 2;
+                    log("Camera centered on imported meshes.");
+                }
+
+                URL.revokeObjectURL(url);
+                log("Blob URL revoked.");
             }, null, (scene, message, exception) => {
                 log(`Error importing mesh: ${message}`);
+                URL.revokeObjectURL(url);
+                log("Blob URL revoked.");
             }, ".glb");
-
-            URL.revokeObjectURL(url);
-            log("Blob URL revoked.");
         } catch (error) {
             log(`Error importing mesh: ${error.message}`);
         }
