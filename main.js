@@ -140,11 +140,11 @@ importButton.addEventListener("click", () => {
 
             log("Starting mesh import...");
             BABYLON.SceneLoader.Append(url, "", scene, (loadedScene) => {
-                log(`Meshes imported successfully: ${loadedScene.meshes.length} meshes found.`);
+                const importedMeshes = loadedScene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
+                log(`Meshes imported successfully: ${importedMeshes.length} meshes found.`);
                 log("Applying material to meshes...");
                 const material = new BABYLON.StandardMaterial("importedMat", scene);
-                material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-                const importedMeshes = loadedScene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
+                material.emissiveColor = new BABYLON.Color3(0, 0, 0);
                 importedMeshes.forEach(mesh => {
                     mesh.material = material;
                 });
