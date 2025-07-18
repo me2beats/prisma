@@ -1,4 +1,5 @@
 import { createScene, createTriangle } from './scene.js';
+import { GLTF2Export } from 'babylonjs-serializers';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 
@@ -70,6 +71,42 @@ selectButton.addEventListener("click", () => toggleMode("select"));
 translateButton.addEventListener("click", () => toggleMode("translate"));
 
 updateToolbar();
+
+const fileButton = document.getElementById("file-button");
+const fileMenu = document.getElementById("file-menu");
+
+fileButton.addEventListener("click", () => {
+    fileMenu.style.display = fileMenu.style.display === "flex" ? "none" : "flex";
+});
+
+const exportButton = document.getElementById("export-gltf");
+exportButton.addEventListener("click", () => {
+    const meshesToExport = scene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
+    GLTF2Export.GLTFAsync(scene, "scene", {
+        shouldExportNode: (node) => meshesToExport.includes(node)
+    }).then((gltf) => {
+        gltf.downloadFiles();
+    });
+});
+
+const importButton = document.getElementById("import-gltf");
+importButton.addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".gltf, .glb";
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = event.target.result;
+            BABYLON.SceneLoader.ImportMesh("", "", "data:" + data, scene, (meshes) => {
+                console.log("Meshes imported successfully");
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+});
 
 const contextMenu = document.getElementById("context-menu");
 const addSubmenu = document.getElementById("add-submenu");
