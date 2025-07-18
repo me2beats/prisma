@@ -80,6 +80,7 @@ fileButton.addEventListener("click", () => {
 
 const exportButton = document.getElementById("export-gltf");
 exportButton.addEventListener("click", () => {
+    fileMenu.style.display = "none";
     const meshesToExport = scene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
     BABYLON.GLTF2Export.GLTFAsync(scene, "scene", {
         shouldExportNode: (node) => meshesToExport.includes(node)
@@ -97,6 +98,7 @@ exportButton.addEventListener("click", () => {
 
 const importButton = document.getElementById("import-gltf");
 importButton.addEventListener("click", () => {
+    fileMenu.style.display = "none";
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".gltf, .glb";
@@ -106,7 +108,10 @@ importButton.addEventListener("click", () => {
         reader.onload = (event) => {
             const data = event.target.result;
             BABYLON.SceneLoader.ImportMesh("", "", "data:" + data, scene, (meshes) => {
-                console.log("Meshes imported successfully");
+                console.log("Meshes imported successfully:", meshes);
+                const material = new BABYLON.StandardMaterial("importedMat", scene);
+                material.emissiveColor = new BABYLON.Color3(1, 1, 1);
+                meshes.forEach(mesh => mesh.material = material);
             });
         };
         reader.readAsDataURL(file);
