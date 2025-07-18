@@ -102,23 +102,25 @@ importButton.addEventListener("click", () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".gltf, .glb";
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
         const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const data = event.target.result;
-            console.log("File data:", data);
-            console.log("Scene object:", scene);
-            BABYLON.SceneLoader.ImportMesh("", "", data, scene, (meshes) => {
-                console.log("Meshes imported successfully:", meshes);
-                const material = new BABYLON.StandardMaterial("importedMat", scene);
-                material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-                meshes.forEach(mesh => mesh.material = material);
-            }, null, (scene, message, exception) => {
-                console.error("Error importing mesh:", message, exception);
-            });
-        };
-        reader.readAsDataURL(file);
+        if (!file) return;
+
+        try {
+            const fileContent = await file.arrayBuffer();
+            const fileData = new Blob([fileContent]);
+            const url = URL.createObjectURL(fileData);
+
+            const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync("", url, "", scene, null, ".glb");
+
+            console.log("Meshes imported successfully:", meshes);
+            const material = new BABYLON.StandardMaterial("importedMat", scene);
+            material.emissiveColor = new BABYLON.Color3(1, 1, 1);
+            meshes.forEach(mesh => mesh.material = material);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error importing mesh:", error);
+        }
     };
     input.click();
 });
