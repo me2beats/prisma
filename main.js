@@ -193,9 +193,10 @@ window.addEventListener("pointerup", (e) => {
         menuJustOpened = false;
         return;
     }
-    if (!e.target.closest(".context-menu")) {
+    if (!e.target.closest(".context-menu") && !e.target.closest("#gui")) {
         contextMenu.style.display = "none";
         addSubmenu.style.display = "none";
+        fileMenu.style.display = "none";
     }
 });
 
