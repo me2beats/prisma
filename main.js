@@ -139,15 +139,16 @@ importButton.addEventListener("click", () => {
             log(`Blob URL created: ${url}`);
 
             log("Starting mesh import...");
-            BABYLON.GLTFFileLoader.IncrementalLoading = false;
-            const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync(null, url, "", scene);
-            log(`Meshes imported successfully: ${meshes.length} meshes found.`);
-
-            log("Applying material to meshes...");
-            const material = new BABYLON.StandardMaterial("importedMat", scene);
-            material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-            meshes.forEach(mesh => mesh.material = material);
-            log("Material applied.");
+            BABYLON.SceneLoader.Append(url, "", scene, (loadedScene) => {
+                log(`Meshes imported successfully: ${loadedScene.meshes.length} meshes found.`);
+                log("Applying material to meshes...");
+                const material = new BABYLON.StandardMaterial("importedMat", scene);
+                material.emissiveColor = new BABYLON.Color3(1, 1, 1);
+                loadedScene.meshes.forEach(mesh => mesh.material = material);
+                log("Material applied.");
+            }, null, (scene, message, exception) => {
+                log(`Error importing mesh: ${message}`);
+            }, ".glb");
 
             URL.revokeObjectURL(url);
             log("Blob URL revoked.");
