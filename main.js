@@ -5,6 +5,16 @@ import { createAxes } from './axes.js';
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
+const debugOverlay = document.getElementById("debug-overlay");
+
+function log(message) {
+    const p = document.createElement("p");
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    debugOverlay.appendChild(p);
+    debugOverlay.scrollTop = debugOverlay.scrollHeight;
+    console.log(message);
+}
+
 const { scene, camera } = createScene(engine, canvas);
 const size = 50;
 
@@ -82,15 +92,14 @@ const exportButton = document.getElementById("export-gltf");
 exportButton.addEventListener("click", () => {
     fileMenu.style.display = "none";
     const meshesToExport = scene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
-    BABYLON.GLTF2Export.GLTFAsync(scene, "scene", {
+    BABYLON.GLTF2Export.GLBAsync(scene, "scene", {
         shouldExportNode: (node) => meshesToExport.includes(node)
-    }).then((gltf) => {
-        const gltfString = JSON.stringify(gltf.glTFFiles["scene.gltf"]);
-        const blob = new Blob([gltfString], {type: "application/json"});
+    }).then((glb) => {
+        const blob = new Blob([glb.glTFFiles["scene.glb"]], {type: "application/octet-stream"});
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "scene.gltf";
+        a.download = "scene.glb";
         a.click();
         URL.revokeObjectURL(url);
     });
@@ -102,23 +111,38 @@ importButton.addEventListener("click", () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".gltf, .glb";
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
         const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const data = event.target.result;
-            console.log("File data:", data);
-            console.log("Scene object:", scene);
-            BABYLON.SceneLoader.ImportMesh("", "", data, scene, (meshes) => {
-                console.log("Meshes imported successfully:", meshes);
-                const material = new BABYLON.StandardMaterial("importedMat", scene);
-                material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-                meshes.forEach(mesh => mesh.material = material);
-            }, null, (scene, message, exception) => {
-                console.error("Error importing mesh:", message, exception);
-            });
-        };
-        reader.readAsDataURL(file);
+        if (!file) {
+            log("No file selected.");
+            return;
+        }
+        log(`File selected: ${file.name}`);
+
+        try {
+            log("Reading file content...");
+            const fileContent = await file.arrayBuffer();
+            log("File content read successfully.");
+
+            const fileData = new Blob([fileContent]);
+            const url = URL.createObjectURL(fileData);
+            log(`Blob URL created: ${url}`);
+
+            log("Starting mesh import...");
+            const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync(null, url, "", scene);
+            log(`Meshes imported successfully: ${meshes.length} meshes found.`);
+
+            log("Applying material to meshes...");
+            const material = new BABYLON.StandardMaterial("importedMat", scene);
+            material.emissiveColor = new BABYLON.Color3(1, 1, 1);
+            meshes.forEach(mesh => mesh.material = material);
+            log("Material applied.");
+
+            URL.revokeObjectURL(url);
+            log("Blob URL revoked.");
+        } catch (error) {
+            log(`Error importing mesh: ${error.message}`);
+        }
     };
     input.click();
 });
