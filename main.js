@@ -95,7 +95,13 @@ exportButton.addEventListener("click", () => {
     BABYLON.GLTF2Export.GLBAsync(scene, "scene", {
         shouldExportNode: (node) => meshesToExport.includes(node)
     }).then((glb) => {
-        glb.downloadFiles();
+        const blob = new Blob([glb.glTFFiles["scene.glb"]], {type: "application/octet-stream"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "scene.glb";
+        a.click();
+        URL.revokeObjectURL(url);
     });
 });
 
