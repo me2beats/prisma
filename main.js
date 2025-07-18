@@ -107,11 +107,15 @@ importButton.addEventListener("click", () => {
         const reader = new FileReader();
         reader.onload = (event) => {
             const data = event.target.result;
+            console.log("File data:", data);
+            console.log("Scene object:", scene);
             BABYLON.SceneLoader.ImportMesh("", "", "data:" + data, scene, (meshes) => {
                 console.log("Meshes imported successfully:", meshes);
                 const material = new BABYLON.StandardMaterial("importedMat", scene);
                 material.emissiveColor = new BABYLON.Color3(1, 1, 1);
                 meshes.forEach(mesh => mesh.material = material);
+            }, null, (scene, message, exception) => {
+                console.error("Error importing mesh:", message, exception);
             });
         };
         reader.readAsDataURL(file);
