@@ -1,11 +1,12 @@
 import { createScene, createTriangle } from './scene.js';
+import { GLTF2Export } from 'babylonjs-serializers';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
-const scene = createScene(engine, canvas);
+const { scene, camera } = createScene(engine, canvas);
 const size = 50;
 
 createGrid(scene, size);
@@ -19,7 +20,7 @@ window.addEventListener("resize", function () {
     engine.resize();
 });
 
-let currentMode = "navigate";
+let activeModes = ["navigate"];
 const selectedMeshes = [];
 const highlightLayer = new BABYLON.HighlightLayer("hl1", scene);
 
@@ -30,7 +31,7 @@ const toolbarButtons = [navigateButton, selectButton, translateButton];
 
 function updateToolbar() {
     toolbarButtons.forEach(button => {
-        if (button.id === currentMode) {
+        if (activeModes.includes(button.id)) {
             button.classList.add("active");
         } else {
             button.classList.remove("active");
@@ -38,32 +39,74 @@ function updateToolbar() {
     });
 }
 
-navigateButton.addEventListener("click", () => {
-    currentMode = "navigate";
+function toggleMode(mode) {
+    const index = activeModes.indexOf(mode);
+    if (index === -1) {
+        activeModes.push(mode);
+    } else {
+        activeModes.splice(index, 1);
+    }
     updateToolbar();
+    updateDragBehavior();
+
+    if (mode === "navigate") {
+        if (activeModes.includes("navigate")) {
+            camera.attachControl(canvas, true);
+        } else {
+            camera.detachControl(canvas);
+        }
+    }
+}
+
+function updateDragBehavior() {
+    const translateEnabled = activeModes.includes("translate");
     selectedMeshes.forEach(mesh => {
         const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
-        if (behavior) behavior.enabled = false;
+        if (behavior) behavior.enabled = translateEnabled;
     });
+}
+
+navigateButton.addEventListener("click", () => toggleMode("navigate"));
+selectButton.addEventListener("click", () => toggleMode("select"));
+translateButton.addEventListener("click", () => toggleMode("translate"));
+
+updateToolbar();
+
+const fileButton = document.getElementById("file-button");
+const fileMenu = document.getElementById("file-menu");
+
+fileButton.addEventListener("click", () => {
+    fileMenu.style.display = fileMenu.style.display === "flex" ? "none" : "flex";
 });
-selectButton.addEventListener("click", () => {
-    currentMode = "select";
-    updateToolbar();
-    selectedMeshes.forEach(mesh => {
-        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
-        if (behavior) behavior.enabled = false;
-    });
-});
-translateButton.addEventListener("click", () => {
-    currentMode = "translate";
-    updateToolbar();
-    selectedMeshes.forEach(mesh => {
-        const behavior = mesh.behaviors.find(b => b.name === "PointerDrag");
-        if (behavior) behavior.enabled = true;
+
+const exportButton = document.getElementById("export-gltf");
+exportButton.addEventListener("click", () => {
+    const meshesToExport = scene.meshes.filter(mesh => mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ");
+    GLTF2Export.GLTFAsync(scene, "scene", {
+        shouldExportNode: (node) => meshesToExport.includes(node)
+    }).then((gltf) => {
+        gltf.downloadFiles();
     });
 });
 
-updateToolbar();
+const importButton = document.getElementById("import-gltf");
+importButton.addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".gltf, .glb";
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = event.target.result;
+            BABYLON.SceneLoader.ImportMesh("", "", "data:" + data, scene, (meshes) => {
+                console.log("Meshes imported successfully");
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+});
 
 const contextMenu = document.getElementById("context-menu");
 const addSubmenu = document.getElementById("add-submenu");
@@ -75,38 +118,49 @@ let isDragging = false;
 let menuJustOpened = false;
 
 canvas.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) {
-        if (e.pointerType === "touch") {
-            startX = e.clientX;
-            startY = e.clientY;
-            isDragging = false;
-            pressTimer = window.setTimeout(() => {
-                pressTimer = null; // Timer finished, but don't show menu yet
-            }, 500);
-        } else if (e.button === 2) {
-            contextMenu.style.display = "flex";
-            contextMenu.style.left = `${e.clientX}px`;
-            contextMenu.style.top = `${e.clientY}px`;
-        }
-        return;
+    // Context menu on right-click or long-press
+    if (e.button === 2 || (e.pointerType === "touch" && e.button === 0)) {
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = false;
+        pressTimer = window.setTimeout(() => {
+            if (!isDragging) {
+                contextMenu.style.display = "flex";
+                contextMenu.style.left = `${e.clientX}px`;
+                contextMenu.style.top = `${e.clientY}px`;
+                menuJustOpened = true;
+            }
+        }, 500);
     }
 
-    if (currentMode === "select") {
+    // Main interaction logic
+    if (e.button === 0) {
         const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
-        if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
-            const mesh = pickInfo.pickedMesh;
-            if (selectedMeshes.includes(mesh)) {
-                const index = selectedMeshes.indexOf(mesh);
-                selectedMeshes.splice(index, 1);
-                highlightLayer.removeMesh(mesh);
-                mesh.removeBehavior(mesh.behaviors.find(b => b.name === "PointerDrag"));
-            } else {
-                selectedMeshes.push(mesh);
-                highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
-                const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
-                pointerDragBehavior.enabled = false;
-                mesh.addBehavior(pointerDragBehavior);
+
+        // Selection
+        if (activeModes.includes("select")) {
+            if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
+                const mesh = pickInfo.pickedMesh;
+                if (selectedMeshes.includes(mesh)) {
+                    const index = selectedMeshes.indexOf(mesh);
+                    selectedMeshes.splice(index, 1);
+                    highlightLayer.removeMesh(mesh);
+                    mesh.removeBehavior(mesh.behaviors.find(b => b.name === "PointerDrag"));
+                } else {
+                    selectedMeshes.push(mesh);
+                    highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
+                    const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
+                    pointerDragBehavior.enabled = activeModes.includes("translate");
+                    mesh.addBehavior(pointerDragBehavior);
+                }
+                return; // Prevent other actions when selecting
             }
+        }
+
+        // Translation
+        if (activeModes.includes("translate") && pickInfo.hit && selectedMeshes.includes(pickInfo.pickedMesh)) {
+            // Handled by PointerDragBehavior, but we need to prevent navigation
+            return;
         }
     }
 });

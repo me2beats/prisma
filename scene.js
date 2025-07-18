@@ -8,7 +8,7 @@ export function createScene(engine, canvas) {
 
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-    return scene;
+    return { scene, camera };
 }
 
 export function createTriangle(scene) {
