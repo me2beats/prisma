@@ -24,3 +24,22 @@ export function createTriangle(scene) {
     vertexData.indices = indices;
     vertexData.applyToMesh(triangle);
 }
+
+export function createQuad(scene) {
+    const quad = new BABYLON.Mesh("quad", scene);
+    const positions = [
+        -1, -1, 0,
+        1, -1, 0,
+        1, 1, 0,
+        -1, 1, 0
+    ];
+    const indices = [0, 1, 2, 0, 2, 3];
+    const vertexData = new BABYLON.VertexData();
+    vertexData.positions = positions;
+    vertexData.indices = indices;
+    vertexData.applyToMesh(quad);
+}
+
+export function createCube(scene) {
+    const cube = BABYLON.MeshBuilder.CreateBox("cube", { size: 1 }, scene);
+}

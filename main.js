@@ -1,4 +1,4 @@
-import { createScene, createTriangle } from './scene.js';
+import { createScene, createTriangle, createQuad, createCube } from './scene.js';
 import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 import { log } from './logger.js';
@@ -268,6 +268,10 @@ addButton.addEventListener("pointerenter", () => {
 addSubmenu.addEventListener("click", (e) => {
     if (e.target.textContent === "Triangle") {
         createTriangle(scene);
+    } else if (e.target.textContent === "Quad") {
+        createQuad(scene);
+    } else if (e.target.textContent === "Cube") {
+        createCube(scene);
     }
     contextMenu.style.display = "none";
     addSubmenu.style.display = "none";
