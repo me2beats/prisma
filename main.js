@@ -194,14 +194,10 @@ const statusBar = document.getElementById("status-bar");
 const hintBar = document.getElementById("hint-bar");
 
 function updateStatusBar() {
-    const totalMeshes = scene.meshes.filter(m => m.name !== "lineSystem" && m.name !== "axisX" && m.name !== "axisZ").length;
+    const userMeshes = scene.meshes.filter(m => m.name !== "lineSystem" && m.name !== "axisX" && m.name !== "axisZ" && !m.name.startsWith("vertex_highlight"));
+    const totalMeshes = userMeshes.length;
     const selectedMeshesCount = selectedMeshes.length;
-    const totalVertices = scene.meshes.reduce((total, mesh) => {
-        if (mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ") {
-            return total + mesh.getTotalVertices();
-        }
-        return total;
-    }, 0);
+    const totalVertices = userMeshes.reduce((total, mesh) => total + mesh.getTotalVertices(), 0);
     const selectedVerticesCount = selectedVertices.length;
 
     statusBar.textContent = `Meshes: ${selectedMeshesCount}/${totalMeshes}, Vertices: ${selectedVerticesCount}/${totalVertices}`;
@@ -209,20 +205,31 @@ function updateStatusBar() {
 
 hintBar.textContent = "long tap to open context menu";
 
-function getClosestVertex(mesh, point) {
+function getClosestVertex(mesh, screenPoint) {
     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
     let minDistance = Infinity;
     let closestVertexIndex = -1;
 
     for (let i = 0; i < positions.length; i += 3) {
         const vertex = new BABYLON.Vector3(positions[i], positions[i+1], positions[i+2]);
-        const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertex, mesh.getWorldMatrix());
-        const distance = BABYLON.Vector3.Distance(transformedVertex, point);
+        const projectedPoint = BABYLON.Vector3.Project(
+            vertex,
+            mesh.getWorldMatrix(),
+            scene.getTransformMatrix(),
+            camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+        );
+
+        const distance = BABYLON.Vector2.Distance(new BABYLON.Vector2(projectedPoint.x, projectedPoint.y), screenPoint);
         if (distance < minDistance) {
             minDistance = distance;
             closestVertexIndex = i / 3;
         }
     }
+
+    if (minDistance > 10) { // 10 pixels tolerance
+        return -1;
+    }
+
     return closestVertexIndex;
 }
 
@@ -232,6 +239,8 @@ function createVertexHighlight(position) {
     const material = new BABYLON.StandardMaterial("vertex_highlight_mat", scene);
     material.emissiveColor = new BABYLON.Color3(1, 0, 0);
     sphere.material = material;
+    sphere.isPickable = false;
+    sphere.name = "vertex_highlight_sphere";
     return sphere;
 }
 
@@ -291,7 +300,7 @@ canvas.addEventListener("pointerdown", (e) => {
         if (activeModes.includes("select-vertex")) {
             if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
                 const mesh = pickInfo.pickedMesh;
-                const closestVertexIndex = getClosestVertex(mesh, pickInfo.pickedPoint);
+                const closestVertexIndex = getClosestVertex(mesh, new BABYLON.Vector2(scene.pointerX, scene.pointerY));
                 if (closestVertexIndex !== -1) {
                     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
                     const vertexPosition = new BABYLON.Vector3(positions[closestVertexIndex * 3], positions[closestVertexIndex * 3 + 1], positions[closestVertexIndex * 3 + 2]);
