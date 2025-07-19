@@ -205,31 +205,20 @@ function updateStatusBar() {
 
 hintBar.textContent = "long tap to open context menu";
 
-function getClosestVertex(mesh, screenPoint) {
+function getClosestVertex(mesh, point) {
     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
     let minDistance = Infinity;
     let closestVertexIndex = -1;
 
     for (let i = 0; i < positions.length; i += 3) {
         const vertex = new BABYLON.Vector3(positions[i], positions[i+1], positions[i+2]);
-        const projectedPoint = BABYLON.Vector3.Project(
-            vertex,
-            mesh.getWorldMatrix(),
-            scene.getTransformMatrix(),
-            camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-        );
-
-        const distance = BABYLON.Vector2.Distance(new BABYLON.Vector2(projectedPoint.x, projectedPoint.y), screenPoint);
+        const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertex, mesh.getWorldMatrix());
+        const distance = BABYLON.Vector3.Distance(transformedVertex, point);
         if (distance < minDistance) {
             minDistance = distance;
             closestVertexIndex = i / 3;
         }
     }
-
-    if (minDistance > 20) { // 20 pixels tolerance
-        return -1;
-    }
-
     return closestVertexIndex;
 }
 
@@ -300,7 +289,7 @@ canvas.addEventListener("pointerdown", (e) => {
         if (activeModes.includes("select-vertex")) {
             if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
                 const mesh = pickInfo.pickedMesh;
-                const closestVertexIndex = getClosestVertex(mesh, new BABYLON.Vector2(scene.pointerX, scene.pointerY));
+                const closestVertexIndex = getClosestVertex(mesh, pickInfo.pickedPoint);
                 if (closestVertexIndex !== -1) {
                     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
                     const vertexPosition = new BABYLON.Vector3(positions[closestVertexIndex * 3], positions[closestVertexIndex * 3 + 1], positions[closestVertexIndex * 3 + 2]);
