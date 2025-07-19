@@ -98,9 +98,41 @@ updateToolbar();
 
 const fileButton = document.getElementById("file-button");
 const fileMenu = document.getElementById("file-menu");
+const settingsButton = document.querySelector("#gui button:nth-child(2)");
+const settingsWindow = document.getElementById("settings-window");
+const settingsCategories = document.getElementById("settings-categories");
+const settingsContent = document.getElementById("settings-content");
 
 fileButton.addEventListener("click", () => {
     fileMenu.style.display = fileMenu.style.display === "flex" ? "none" : "flex";
+});
+
+settingsButton.addEventListener("click", () => {
+    settingsWindow.style.display = settingsWindow.style.display === "flex" ? "none" : "flex";
+});
+
+settingsCategories.addEventListener("click", (e) => {
+    if (e.target.tagName === "BUTTON") {
+        const category = e.target.dataset.category;
+
+        // Update active button
+        const buttons = settingsCategories.querySelectorAll("button");
+        buttons.forEach(button => button.classList.remove("active"));
+        e.target.classList.add("active");
+
+        // Show correct settings
+        const allSettings = settingsContent.querySelectorAll(".settings-category");
+        allSettings.forEach(s => s.style.display = "none");
+        document.getElementById(category).style.display = "block";
+    }
+});
+
+const vertexSelectionRadiusSlider = document.getElementById("vertex-selection-radius");
+const vertexSelectionRadiusValue = document.getElementById("vertex-selection-radius-value");
+
+vertexSelectionRadiusSlider.addEventListener("input", (e) => {
+    vertexSelectionRadius = parseInt(e.target.value, 10);
+    vertexSelectionRadiusValue.textContent = vertexSelectionRadius;
 });
 
 const exportButton = document.getElementById("export-gltf");
@@ -205,20 +237,33 @@ function updateStatusBar() {
 
 hintBar.textContent = "long tap to open context menu";
 
-function getClosestVertex(mesh, point) {
+let vertexSelectionRadius = 100;
+
+function getClosestVertex(mesh, screenPoint) {
     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
     let minDistance = Infinity;
     let closestVertexIndex = -1;
 
     for (let i = 0; i < positions.length; i += 3) {
         const vertex = new BABYLON.Vector3(positions[i], positions[i+1], positions[i+2]);
-        const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertex, mesh.getWorldMatrix());
-        const distance = BABYLON.Vector3.Distance(transformedVertex, point);
+        const projectedPoint = BABYLON.Vector3.Project(
+            vertex,
+            mesh.getWorldMatrix(),
+            scene.getTransformMatrix(),
+            camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+        );
+
+        const distance = BABYLON.Vector2.Distance(new BABYLON.Vector2(projectedPoint.x, projectedPoint.y), screenPoint);
         if (distance < minDistance) {
             minDistance = distance;
             closestVertexIndex = i / 3;
         }
     }
+
+    if (minDistance > vertexSelectionRadius) {
+        return -1;
+    }
+
     return closestVertexIndex;
 }
 
@@ -289,7 +334,7 @@ canvas.addEventListener("pointerdown", (e) => {
         if (activeModes.includes("select-vertex")) {
             if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
                 const mesh = pickInfo.pickedMesh;
-                const closestVertexIndex = getClosestVertex(mesh, pickInfo.pickedPoint);
+                const closestVertexIndex = getClosestVertex(mesh, new BABYLON.Vector2(scene.pointerX, scene.pointerY));
                 if (closestVertexIndex !== -1) {
                     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
                     const vertexPosition = new BABYLON.Vector3(positions[closestVertexIndex * 3], positions[closestVertexIndex * 3 + 1], positions[closestVertexIndex * 3 + 2]);
