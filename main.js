@@ -169,6 +169,7 @@ const addButton = document.getElementById("add");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
 const statusBar = document.getElementById("status-bar");
+const hintBar = document.getElementById("hint-bar");
 
 function updateStatusBar() {
     const totalMeshes = scene.meshes.filter(m => m.name !== "lineSystem" && m.name !== "axisX" && m.name !== "axisZ").length;
@@ -179,10 +180,12 @@ function updateStatusBar() {
         }
         return total;
     }, 0);
-    const selectedVertices = selectedMeshes.reduce((total, mesh) => total + mesh.getTotalVertices(), 0);
+    const selectedVertices = 0;
 
     statusBar.textContent = `Meshes: ${selectedMeshesCount}/${totalMeshes}, Vertices: ${selectedVertices}/${totalVertices}`;
 }
+
+hintBar.textContent = "long tap to open context menu";
 
 initActionManager(scene, createTriangle, createQuad, createCube, updateStatusBar);
 updateStatusBar();
