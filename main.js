@@ -3,6 +3,7 @@ import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 import { log } from './logger.js';
 import "https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js";
+import "https://cdn.babylonjs.com/gui/babylon.gui.min.js";
 import { init as initActionManager, addAction, undo, redo } from './undoManager.js';
 
 const canvas = document.getElementById("renderCanvas");
@@ -14,7 +15,10 @@ const size = 50;
 createGrid(scene, size);
 createAxes(scene, size);
 
-const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+let advancedTexture;
+if (BABYLON.GUI) {
+    advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+}
 
 function updateVertexHighlightPositions() {
     for (const selectedVertex of selectedVertices) {
