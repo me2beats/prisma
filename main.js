@@ -14,7 +14,28 @@ const size = 50;
 createGrid(scene, size);
 createAxes(scene, size);
 
+const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+function updateVertexHighlightPositions() {
+    for (const selectedVertex of selectedVertices) {
+        const vertex = new BABYLON.Vector3(
+            selectedVertex.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind)[selectedVertex.index * 3],
+            selectedVertex.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind)[selectedVertex.index * 3 + 1],
+            selectedVertex.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind)[selectedVertex.index * 3 + 2]
+        );
+        const projectedPoint = BABYLON.Vector3.Project(
+            vertex,
+            selectedVertex.mesh.getWorldMatrix(),
+            scene.getTransformMatrix(),
+            camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+        );
+        selectedVertex.highlight.left = projectedPoint.x - selectedVertex.highlight.widthInPixels / 2;
+        selectedVertex.highlight.top = projectedPoint.y - selectedVertex.highlight.heightInPixels / 2;
+    }
+}
+
 engine.runRenderLoop(function () {
+    updateVertexHighlightPositions();
     scene.render();
 });
 
@@ -278,16 +299,14 @@ function getClosestVertex(mesh, screenPoint) {
     return closestVertexIndex;
 }
 
-function createVertexHighlight(position, parentMesh) {
-    const sphere = BABYLON.MeshBuilder.CreateSphere("vertex_highlight", {diameter: 0.1}, scene);
-    sphere.parent = parentMesh;
-    sphere.position = position;
-    const material = new BABYLON.StandardMaterial("vertex_highlight_mat", scene);
-    material.emissiveColor = new BABYLON.Color3(1, 0, 0);
-    sphere.material = material;
-    sphere.isPickable = false;
-    sphere.name = "vertex_highlight_sphere";
-    return sphere;
+function createVertexHighlight() {
+    const ellipse = new BABYLON.GUI.Ellipse();
+    ellipse.width = "10px";
+    ellipse.height = "10px";
+    ellipse.color = "red";
+    ellipse.thickness = 2;
+    advancedTexture.addControl(ellipse);
+    return ellipse;
 }
 
 initActionManager(scene, createTriangle, createQuad, createCube, updateStatusBar);
@@ -348,15 +367,13 @@ canvas.addEventListener("pointerdown", (e) => {
                 const mesh = pickInfo.pickedMesh;
                 const closestVertexIndex = getClosestVertex(mesh, new BABYLON.Vector2(scene.pointerX, scene.pointerY));
                 if (closestVertexIndex !== -1) {
-                    const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-                    const vertexPosition = new BABYLON.Vector3(positions[closestVertexIndex * 3], positions[closestVertexIndex * 3 + 1], positions[closestVertexIndex * 3 + 2]);
-
                     const existingSelection = selectedVertices.find(v => v.mesh === mesh && v.index === closestVertexIndex);
                     if (existingSelection) {
+                        advancedTexture.removeControl(existingSelection.highlight);
                         existingSelection.highlight.dispose();
                         selectedVertices.splice(selectedVertices.indexOf(existingSelection), 1);
                     } else {
-                        const highlight = createVertexHighlight(vertexPosition, mesh);
+                        const highlight = createVertexHighlight();
                         selectedVertices.push({ mesh, index: closestVertexIndex, highlight });
                     }
                     updateStatusBar();
