@@ -168,6 +168,21 @@
             display: block;
             margin-bottom: 5px;
         }
+        #close-settings {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        @media (orientation: portrait) {
+            #settings-window {
+                width: 90vw;
+            }
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
@@ -226,6 +241,7 @@
     <div id="status-bar"></div>
     <div id="hint-bar"></div>
     <div id="settings-window">
+        <button id="close-settings">&times;</button>
         <div id="settings-categories">
             <button class="active" data-category="selection-settings">Selection</button>
         </div>
