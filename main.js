@@ -29,8 +29,10 @@ function updateVertexHighlightPositions() {
             scene.getTransformMatrix(),
             camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
         );
-        selectedVertex.highlight.left = projectedPoint.x - selectedVertex.highlight.widthInPixels / 2;
-        selectedVertex.highlight.top = projectedPoint.y - selectedVertex.highlight.heightInPixels / 2;
+        const width = parseFloat(selectedVertex.highlight.width.toString().replace("px", ""));
+        const height = parseFloat(selectedVertex.highlight.height.toString().replace("px", ""));
+        selectedVertex.highlight.left = projectedPoint.x - width / 2;
+        selectedVertex.highlight.top = projectedPoint.y - height / 2;
     }
 }
 
