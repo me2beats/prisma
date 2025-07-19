@@ -24,12 +24,16 @@ window.addEventListener("resize", function () {
 
 let activeModes = ["navigate"];
 const selectedMeshes = [];
+const selectedVertices = [];
 const highlightLayer = new BABYLON.HighlightLayer("hl1", scene);
 
 const navigateButton = document.getElementById("navigate");
 const selectButton = document.getElementById("select");
 const translateButton = document.getElementById("translate");
-const toolbarButtons = [navigateButton, selectButton, translateButton];
+const selectVertexButton = document.getElementById("select-vertex");
+const selectEdgeButton = document.getElementById("select-edge");
+const selectFaceButton = document.getElementById("select-face");
+const toolbarButtons = [navigateButton, selectButton, translateButton, selectVertexButton, selectEdgeButton, selectFaceButton];
 
 function updateToolbar() {
     toolbarButtons.forEach(button => {
@@ -42,12 +46,27 @@ function updateToolbar() {
 }
 
 function toggleMode(mode) {
+    const selectionModes = ["select", "select-vertex", "select-edge", "select-face"];
+
+    if (selectionModes.includes(mode)) {
+        // Deactivate all other selection modes
+        selectionModes.forEach(m => {
+            if (m !== mode) {
+                const idx = activeModes.indexOf(m);
+                if (idx !== -1) {
+                    activeModes.splice(idx, 1);
+                }
+            }
+        });
+    }
+
     const index = activeModes.indexOf(mode);
     if (index === -1) {
         activeModes.push(mode);
     } else {
         activeModes.splice(index, 1);
     }
+
     updateToolbar();
     updateDragBehavior();
 
@@ -71,6 +90,9 @@ function updateDragBehavior() {
 navigateButton.addEventListener("click", () => toggleMode("navigate"));
 selectButton.addEventListener("click", () => toggleMode("select"));
 translateButton.addEventListener("click", () => toggleMode("translate"));
+selectVertexButton.addEventListener("click", () => toggleMode("select-vertex"));
+selectEdgeButton.addEventListener("click", () => toggleMode("select-edge"));
+selectFaceButton.addEventListener("click", () => toggleMode("select-face"));
 
 updateToolbar();
 
@@ -180,12 +202,38 @@ function updateStatusBar() {
         }
         return total;
     }, 0);
-    const selectedVertices = 0;
+    const selectedVerticesCount = selectedVertices.length;
 
-    statusBar.textContent = `Meshes: ${selectedMeshesCount}/${totalMeshes}, Vertices: ${selectedVertices}/${totalVertices}`;
+    statusBar.textContent = `Meshes: ${selectedMeshesCount}/${totalMeshes}, Vertices: ${selectedVerticesCount}/${totalVertices}`;
 }
 
 hintBar.textContent = "long tap to open context menu";
+
+function getClosestVertex(mesh, point) {
+    const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+    let minDistance = Infinity;
+    let closestVertexIndex = -1;
+
+    for (let i = 0; i < positions.length; i += 3) {
+        const vertex = new BABYLON.Vector3(positions[i], positions[i+1], positions[i+2]);
+        const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertex, mesh.getWorldMatrix());
+        const distance = BABYLON.Vector3.Distance(transformedVertex, point);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestVertexIndex = i / 3;
+        }
+    }
+    return closestVertexIndex;
+}
+
+function createVertexHighlight(position) {
+    const sphere = BABYLON.MeshBuilder.CreateSphere("vertex_highlight", {diameter: 0.1}, scene);
+    sphere.position = position;
+    const material = new BABYLON.StandardMaterial("vertex_highlight_mat", scene);
+    material.emissiveColor = new BABYLON.Color3(1, 0, 0);
+    sphere.material = material;
+    return sphere;
+}
 
 initActionManager(scene, createTriangle, createQuad, createCube, updateStatusBar);
 updateStatusBar();
@@ -236,6 +284,29 @@ canvas.addEventListener("pointerdown", (e) => {
                 }
                 updateStatusBar();
                 return; // Prevent other actions when selecting
+            }
+        }
+
+        // Vertex Selection
+        if (activeModes.includes("select-vertex")) {
+            if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
+                const mesh = pickInfo.pickedMesh;
+                const closestVertexIndex = getClosestVertex(mesh, pickInfo.pickedPoint);
+                if (closestVertexIndex !== -1) {
+                    const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+                    const vertexPosition = new BABYLON.Vector3(positions[closestVertexIndex * 3], positions[closestVertexIndex * 3 + 1], positions[closestVertexIndex * 3 + 2]);
+                    const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertexPosition, mesh.getWorldMatrix());
+
+                    const existingSelection = selectedVertices.find(v => v.mesh === mesh && v.index === closestVertexIndex);
+                    if (existingSelection) {
+                        existingSelection.highlight.dispose();
+                        selectedVertices.splice(selectedVertices.indexOf(existingSelection), 1);
+                    } else {
+                        const highlight = createVertexHighlight(transformedVertex);
+                        selectedVertices.push({ mesh, index: closestVertexIndex, highlight });
+                    }
+                    updateStatusBar();
+                }
             }
         }
 
