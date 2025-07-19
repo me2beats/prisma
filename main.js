@@ -3,7 +3,7 @@ import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 import { log } from './logger.js';
 import "https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js";
-import { init as initActionManager, addAction, undo, redo } from './actionManager.js';
+import { init as initActionManager, addAction, undo, redo } from './undoManager.js';
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
