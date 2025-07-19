@@ -226,7 +226,7 @@ function getClosestVertex(mesh, screenPoint) {
         }
     }
 
-    if (minDistance > 10) { // 10 pixels tolerance
+    if (minDistance > 20) { // 20 pixels tolerance
         return -1;
     }
 
