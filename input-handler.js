@@ -1,4 +1,4 @@
-import { createTriangle } from './scene.js';
+import { createTriangle } from './primitives.js';
 
 export function initializeInputHandling(canvas, scene, highlightLayer, selectedMeshes, activeModes) {
     const contextMenu = document.getElementById("context-menu");
