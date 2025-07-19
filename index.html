@@ -124,6 +124,50 @@
             font-family: monospace;
             font-size: 10px;
         }
+        #settings-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            background-color: rgba(50, 50, 50, 0.9);
+            border: 1px solid #555;
+            border-radius: 10px;
+            display: none;
+            flex-direction: row;
+            color: white;
+            font-family: sans-serif;
+        }
+        #settings-categories {
+            width: 150px;
+            border-right: 1px solid #555;
+            padding: 10px;
+        }
+        #settings-categories button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: transparent;
+            border: none;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+        }
+        #settings-categories button.active {
+            background-color: rgba(0, 120, 215, 0.5);
+        }
+        #settings-content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .setting {
+            margin-bottom: 20px;
+        }
+        .setting label {
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
@@ -150,6 +194,15 @@
         <button id="translate">
             <span class="material-icons">open_in_full</span>
         </button>
+        <button id="select-vertex">
+            <span class="material-icons">grain</span>
+        </button>
+        <button id="select-edge">
+            <span class="material-icons">horizontal_rule</span>
+        </button>
+        <button id="select-face">
+            <span class="material-icons">change_history</span>
+        </button>
     </div>
     <canvas id="renderCanvas"></canvas>
     <div id="context-menu" class="context-menu">
@@ -172,5 +225,19 @@
     <div id="debug-overlay"></div>
     <div id="status-bar"></div>
     <div id="hint-bar"></div>
+    <div id="settings-window">
+        <div id="settings-categories">
+            <button class="active" data-category="selection-settings">Selection</button>
+        </div>
+        <div id="settings-content">
+            <div id="selection-settings" class="settings-category">
+                <div class="setting">
+                    <label for="vertex-selection-radius">Vertex Selection Radius</label>
+                    <input type="range" id="vertex-selection-radius" min="20" max="200" value="100">
+                    <span id="vertex-selection-radius-value">100</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
