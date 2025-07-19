@@ -168,8 +168,24 @@ const addSubmenu = document.getElementById("add-submenu");
 const addButton = document.getElementById("add");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
+const statusBar = document.getElementById("status-bar");
 
-initActionManager(scene, createTriangle, createQuad, createCube);
+function updateStatusBar() {
+    const totalMeshes = scene.meshes.filter(m => m.name !== "lineSystem" && m.name !== "axisX" && m.name !== "axisZ").length;
+    const selectedMeshesCount = selectedMeshes.length;
+    const totalVertices = scene.meshes.reduce((total, mesh) => {
+        if (mesh.name !== "lineSystem" && mesh.name !== "axisX" && mesh.name !== "axisZ") {
+            return total + mesh.getTotalVertices();
+        }
+        return total;
+    }, 0);
+    const selectedVertices = selectedMeshes.reduce((total, mesh) => total + mesh.getTotalVertices(), 0);
+
+    statusBar.textContent = `Meshes: ${selectedMeshesCount}/${totalMeshes}, Vertices: ${selectedVertices}/${totalVertices}`;
+}
+
+initActionManager(scene, createTriangle, createQuad, createCube, updateStatusBar);
+updateStatusBar();
 
 undoButton.addEventListener("click", undo);
 redoButton.addEventListener("click", redo);
@@ -215,6 +231,7 @@ canvas.addEventListener("pointerdown", (e) => {
                     pointerDragBehavior.enabled = activeModes.includes("translate");
                     mesh.addBehavior(pointerDragBehavior);
                 }
+                updateStatusBar();
                 return; // Prevent other actions when selecting
             }
         }
@@ -288,6 +305,7 @@ addSubmenu.addEventListener("click", (e) => {
     }
     if (mesh) {
         addAction({ type: 'creation', mesh: mesh, meshType: meshType });
+        updateStatusBar();
     }
     contextMenu.style.display = "none";
     addSubmenu.style.display = "none";

@@ -102,6 +102,16 @@
             user-select: none;
             color: white;
         }
+        #status-bar {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
@@ -148,5 +158,6 @@
     </div>
     <script type="module" src="main.js"></script>
     <div id="debug-overlay"></div>
+    <div id="status-bar"></div>
 </body>
 </html>
