@@ -278,8 +278,9 @@ function getClosestVertex(mesh, screenPoint) {
     return closestVertexIndex;
 }
 
-function createVertexHighlight(position) {
+function createVertexHighlight(position, parentMesh) {
     const sphere = BABYLON.MeshBuilder.CreateSphere("vertex_highlight", {diameter: 0.1}, scene);
+    sphere.parent = parentMesh;
     sphere.position = position;
     const material = new BABYLON.StandardMaterial("vertex_highlight_mat", scene);
     material.emissiveColor = new BABYLON.Color3(1, 0, 0);
@@ -349,14 +350,13 @@ canvas.addEventListener("pointerdown", (e) => {
                 if (closestVertexIndex !== -1) {
                     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
                     const vertexPosition = new BABYLON.Vector3(positions[closestVertexIndex * 3], positions[closestVertexIndex * 3 + 1], positions[closestVertexIndex * 3 + 2]);
-                    const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertexPosition, mesh.getWorldMatrix());
 
                     const existingSelection = selectedVertices.find(v => v.mesh === mesh && v.index === closestVertexIndex);
                     if (existingSelection) {
                         existingSelection.highlight.dispose();
                         selectedVertices.splice(selectedVertices.indexOf(existingSelection), 1);
                     } else {
-                        const highlight = createVertexHighlight(transformedVertex);
+                        const highlight = createVertexHighlight(vertexPosition, mesh);
                         selectedVertices.push({ mesh, index: closestVertexIndex, highlight });
                     }
                     updateStatusBar();
