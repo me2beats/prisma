@@ -85,6 +85,23 @@
             overflow-y: auto;
             z-index: 10;
         }
+        #undo-redo-container {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+        #undo-redo-container button {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: none;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            user-select: none;
+            color: white;
+        }
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
@@ -120,6 +137,14 @@
         <button>Triangle</button>
         <button>Quad</button>
         <button>Cube</button>
+    </div>
+    <div id="undo-redo-container">
+        <button id="undo">
+            <span class="material-icons">undo</span>
+        </button>
+        <button id="redo">
+            <span class="material-icons">redo</span>
+        </button>
     </div>
     <script type="module" src="main.js"></script>
     <div id="debug-overlay"></div>

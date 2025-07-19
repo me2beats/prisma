@@ -3,6 +3,7 @@ import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 import { log } from './logger.js';
 import "https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js";
+import { init as initActionManager, addAction, undo, redo } from './undoManager.js';
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
@@ -165,6 +166,13 @@ importButton.addEventListener("click", () => {
 const contextMenu = document.getElementById("context-menu");
 const addSubmenu = document.getElementById("add-submenu");
 const addButton = document.getElementById("add");
+const undoButton = document.getElementById("undo");
+const redoButton = document.getElementById("redo");
+
+initActionManager(scene, createTriangle, createQuad, createCube);
+
+undoButton.addEventListener("click", undo);
+redoButton.addEventListener("click", redo);
 
 let pressTimer;
 let startX, startY;
@@ -266,12 +274,20 @@ addButton.addEventListener("pointerenter", () => {
 });
 
 addSubmenu.addEventListener("click", (e) => {
+    let mesh;
+    let meshType;
     if (e.target.textContent === "Triangle") {
-        createTriangle(scene);
+        mesh = createTriangle(scene);
+        meshType = 'triangle';
     } else if (e.target.textContent === "Quad") {
-        createQuad(scene);
+        mesh = createQuad(scene);
+        meshType = 'quad';
     } else if (e.target.textContent === "Cube") {
-        createCube(scene);
+        mesh = createCube(scene);
+        meshType = 'cube';
+    }
+    if (mesh) {
+        addAction({ type: 'creation', mesh: mesh, meshType: meshType });
     }
     contextMenu.style.display = "none";
     addSubmenu.style.display = "none";
