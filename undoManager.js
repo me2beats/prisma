@@ -3,12 +3,14 @@ const redoStack = [];
 
 let scene;
 let createTriangle, createQuad, createCube;
+let onAction;
 
-export function init(s, ct, cq, cc) {
+export function init(s, ct, cq, cc, oa) {
     scene = s;
     createTriangle = ct;
     createQuad = cq;
     createCube = cc;
+    onAction = oa;
 }
 
 export function addAction(action) {
@@ -23,6 +25,7 @@ export function undo() {
         action.mesh.dispose();
     }
     redoStack.push(action);
+    if (onAction) onAction();
 }
 
 export function redo() {
@@ -42,4 +45,5 @@ export function redo() {
         action.mesh = newMesh;
     }
     undoStack.push(action);
+    if (onAction) onAction();
 }
