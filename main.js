@@ -3,6 +3,7 @@ import { createGrid } from './grid.js';
 import { createAxes } from './axes.js';
 import { log } from './logger.js';
 import "https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js";
+import { init as initActionManager, addAction, undo, redo } from './actionManager.js';
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
@@ -168,41 +169,7 @@ const addButton = document.getElementById("add");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
 
-const undoStack = [];
-const redoStack = [];
-
-function addAction(action) {
-    undoStack.push(action);
-    redoStack.length = 0; // Clear redo stack
-}
-
-function undo() {
-    if (undoStack.length === 0) return;
-    const action = undoStack.pop();
-    if (action.type === 'creation') {
-        action.mesh.dispose();
-    }
-    redoStack.push(action);
-}
-
-function redo() {
-    if (redoStack.length === 0) return;
-    const action = redoStack.pop();
-    let newMesh;
-    if (action.type === 'creation') {
-        if (action.meshType === 'triangle') {
-            newMesh = createTriangle(scene);
-        } else if (action.meshType === 'quad') {
-            newMesh = createQuad(scene);
-        } else if (action.meshType === 'cube') {
-            newMesh = createCube(scene);
-        }
-    }
-    if (newMesh) {
-        action.mesh = newMesh;
-    }
-    undoStack.push(action);
-}
+initActionManager(scene, createTriangle, createQuad, createCube);
 
 undoButton.addEventListener("click", undo);
 redoButton.addEventListener("click", redo);
