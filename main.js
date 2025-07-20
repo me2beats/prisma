@@ -100,6 +100,7 @@ const fileButton = document.getElementById("file-button");
 const fileMenu = document.getElementById("file-menu");
 const settingsButton = document.querySelector("#gui button:nth-child(2)");
 const settingsWindow = document.getElementById("settings-window");
+const closeSettingsButton = document.getElementById("close-settings");
 const settingsCategories = document.getElementById("settings-categories");
 const settingsContent = document.getElementById("settings-content");
 
@@ -107,8 +108,20 @@ fileButton.addEventListener("click", () => {
     fileMenu.style.display = fileMenu.style.display === "flex" ? "none" : "flex";
 });
 
-settingsButton.addEventListener("click", () => {
-    settingsWindow.style.display = settingsWindow.style.display === "flex" ? "none" : "flex";
+function openSettings() {
+    settingsWindow.style.display = "flex";
+}
+
+function closeSettings() {
+    settingsWindow.style.display = "none";
+}
+
+settingsButton.addEventListener("click", openSettings);
+closeSettingsButton.addEventListener("click", closeSettings);
+settingsWindow.addEventListener("click", (e) => {
+    if (e.target === settingsWindow) {
+        closeSettings();
+    }
 });
 
 settingsCategories.addEventListener("click", (e) => {
