@@ -435,7 +435,8 @@ canvas.addEventListener("pointerdown", (e) => {
 
     // Main interaction logic
     if (e.button === 0) {
-        const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
+        const ray = scene.createPickingRay(scene.pointerX, scene.pointerY, BABYLON.Matrix.Identity(), camera);
+        const pickInfo = scene.pickWithRay(ray);
 
         // Selection
         if (activeModes.includes("select")) {
