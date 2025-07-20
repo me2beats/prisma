@@ -14,8 +14,11 @@ const size = 50;
 createGrid(scene, size);
 createAxes(scene, size);
 
+const fpsMeter = document.getElementById("fps-meter");
+
 engine.runRenderLoop(function () {
     scene.render();
+    fpsMeter.textContent = `${engine.getFps().toFixed()} FPS`;
 });
 
 scene.onBeforeRenderObservable.add(() => {
