@@ -59,7 +59,7 @@ function updateToolbar() {
 
 function updateFaceHighlights() {
     selectedFaces.forEach(face => {
-        face.highlight.dispose();
+        face.highlights.forEach(h => h.dispose());
         const positions = face.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
         const indices = face.mesh.getIndices();
         const i1 = indices[face.faceId * 3];
@@ -71,7 +71,10 @@ function updateFaceHighlights() {
         const transformedP1 = BABYLON.Vector3.TransformCoordinates(p1, face.mesh.getWorldMatrix());
         const transformedP2 = BABYLON.Vector3.TransformCoordinates(p2, face.mesh.getWorldMatrix());
         const transformedP3 = BABYLON.Vector3.TransformCoordinates(p3, face.mesh.getWorldMatrix());
-        face.highlight = createFaceHighlight(transformedP1, transformedP2, transformedP3);
+        const highlight1 = createEdgeHighlight(transformedP1, transformedP2, new BABYLON.Color3(0, 1, 0));
+        const highlight2 = createEdgeHighlight(transformedP2, transformedP3, new BABYLON.Color3(0, 1, 0));
+        const highlight3 = createEdgeHighlight(transformedP3, transformedP1, new BABYLON.Color3(0, 1, 0));
+        face.highlights = [highlight1, highlight2, highlight3];
     });
 }
 
@@ -375,28 +378,14 @@ function getClosestEdge(mesh, screenPoint) {
     return closestEdge;
 }
 
-function createEdgeHighlight(p1, p2) {
+function createEdgeHighlight(p1, p2, color) {
     const line = BABYLON.MeshBuilder.CreateLines("edge_highlight", {
         points: [p1, p2],
         updatable: true
     }, scene);
-    line.color = new BABYLON.Color3(1, 0, 0);
+    line.color = color;
     line.isPickable = false;
     return line;
-}
-
-function createFaceHighlight(p1, p2, p3) {
-    const highlight = new BABYLON.MeshBuilder.CreatePolygon("face_highlight", {
-        shape: [p1, p2, p3],
-        updatable: true
-    }, scene);
-    const material = new BABYLON.StandardMaterial("face_highlight_mat", scene);
-    material.emissiveColor = new BABYLON.Color3(1, 0, 0);
-    material.alpha = 0.5;
-    material.disableLighting = true;
-    highlight.material = material;
-    highlight.isPickable = false;
-    return highlight;
 }
 
 function updateVertexHighlights() {
@@ -499,7 +488,7 @@ canvas.addEventListener("pointerdown", (e) => {
                         existingSelection.highlight.dispose();
                         selectedEdges.splice(selectedEdges.indexOf(existingSelection), 1);
                     } else {
-                        const highlight = createEdgeHighlight(closestEdge.p1, closestEdge.p2);
+                        const highlight = createEdgeHighlight(closestEdge.p1, closestEdge.p2, new BABYLON.Color3(1, 0, 0));
                         selectedEdges.push({ mesh, indices: closestEdge.indices, highlight });
                     }
                 }
@@ -520,7 +509,7 @@ canvas.addEventListener("pointerdown", (e) => {
                 if (faceId !== -1) {
                     const existingSelection = selectedFaces.find(f => f.mesh === mesh && f.faceId === faceId);
                     if (existingSelection) {
-                        existingSelection.highlight.dispose();
+                        existingSelection.highlights.forEach(h => h.dispose());
                         selectedFaces.splice(selectedFaces.indexOf(existingSelection), 1);
                     } else {
                         const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
@@ -534,8 +523,10 @@ canvas.addEventListener("pointerdown", (e) => {
                         const transformedP1 = BABYLON.Vector3.TransformCoordinates(p1, mesh.getWorldMatrix());
                         const transformedP2 = BABYLON.Vector3.TransformCoordinates(p2, mesh.getWorldMatrix());
                         const transformedP3 = BABYLON.Vector3.TransformCoordinates(p3, mesh.getWorldMatrix());
-                        const highlight = createFaceHighlight(transformedP1, transformedP2, transformedP3);
-                        selectedFaces.push({ mesh, faceId, highlight });
+                        const highlight1 = createEdgeHighlight(transformedP1, transformedP2, new BABYLON.Color3(0, 1, 0));
+                        const highlight2 = createEdgeHighlight(transformedP2, transformedP3, new BABYLON.Color3(0, 1, 0));
+                        const highlight3 = createEdgeHighlight(transformedP3, transformedP1, new BABYLON.Color3(0, 1, 0));
+                        selectedFaces.push({ mesh, faceId, highlights: [highlight1, highlight2, highlight3] });
                     }
                 }
             }
