@@ -82,14 +82,14 @@ function updateFaceHighlights() {
 
 function updateEdgeHighlights() {
     selectedEdges.forEach(edge => {
+        edge.highlight.dispose();
         const positions = edge.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
         const p1 = new BABYLON.Vector3(positions[edge.indices[0] * 3], positions[edge.indices[0] * 3 + 1], positions[edge.indices[0] * 3 + 2]);
         const p2 = new BABYLON.Vector3(positions[edge.indices[1] * 3], positions[edge.indices[1] * 3 + 1], positions[edge.indices[1] * 3 + 2]);
         const transformedP1 = BABYLON.Vector3.TransformCoordinates(p1, edge.mesh.getWorldMatrix());
         const transformedP2 = BABYLON.Vector3.TransformCoordinates(p2, edge.mesh.getWorldMatrix());
 
-        const path = [transformedP1, transformedP2];
-        edge.highlight = BABYLON.MeshBuilder.CreateTube(null, { path: path, instance: edge.highlight });
+        edge.highlight = createEdgeHighlight(transformedP1, transformedP2, new BABYLON.Color3(1, 0, 0));
     });
 }
 
