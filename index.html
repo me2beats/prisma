@@ -78,12 +78,16 @@
             left: 10px;
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 10px;
+            padding: 5px 10px;
             border-radius: 5px;
             font-family: monospace;
+            font-size: 10px;
             max-height: 200px;
             overflow-y: auto;
             z-index: 10;
+        }
+        #debug-overlay div {
+            line-height: 1.2;
         }
         #undo-redo-container {
             position: absolute;
@@ -112,10 +116,12 @@
             border-radius: 5px;
             font-family: monospace;
             font-size: 10px;
+            max-width: 200px;
+            white-space: normal;
         }
-        #hint-bar {
+        #fps-meter {
             position: absolute;
-            bottom: 30px;
+            top: 10px;
             right: 10px;
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
@@ -123,6 +129,19 @@
             border-radius: 5px;
             font-family: monospace;
             font-size: 10px;
+        }
+        #hint-bar {
+            position: absolute;
+            bottom: 50px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 10px;
+            max-width: 200px;
+            white-space: normal;
         }
         #settings-window {
             position: absolute;
@@ -245,6 +264,7 @@
     <script type="module" src="main.js"></script>
     <div id="debug-overlay"></div>
     <div id="status-bar"></div>
+    <div id="fps-meter"></div>
     <div id="hint-bar"></div>
     <div id="settings-window">
         <div id="settings-container">
