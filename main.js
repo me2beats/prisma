@@ -18,6 +18,16 @@ engine.runRenderLoop(function () {
     scene.render();
 });
 
+scene.onBeforeRenderObservable.add(() => {
+    const scale = 0.05;
+    selectedVertices.forEach(v => {
+        const distance = BABYLON.Vector3.Distance(v.highlight.position, camera.position);
+        v.highlight.scaling.x = distance * scale;
+        v.highlight.scaling.y = distance * scale;
+        v.highlight.scaling.z = distance * scale;
+    });
+});
+
 window.addEventListener("resize", function () {
     engine.resize();
 });
@@ -284,6 +294,7 @@ function createVertexHighlight(position) {
     const sphere = BABYLON.MeshBuilder.CreateSphere("vertex_highlight", {diameter: 0.1}, scene);
     sphere.position = position;
     const material = new BABYLON.StandardMaterial("vertex_highlight_mat", scene);
+    material.disableLighting = true;
     material.emissiveColor = new BABYLON.Color3(1, 0, 0);
     sphere.material = material;
     sphere.isPickable = false;
