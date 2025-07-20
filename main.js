@@ -284,6 +284,12 @@ importButton.addEventListener("click", () => {
 const contextMenu = document.getElementById("context-menu");
 const addSubmenu = document.getElementById("add-submenu");
 const addButton = document.getElementById("add");
+const deselectAllButton = document.getElementById("deselect-all");
+const deselectButton = document.getElementById("deselect");
+const deselectSubmenu = document.getElementById("deselect-submenu");
+const deselectVerticesButton = document.getElementById("deselect-vertices");
+const deselectEdgesButton = document.getElementById("deselect-edges");
+const deselectFacesButton = document.getElementById("deselect-faces");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
 const statusBar = document.getElementById("status-bar");
@@ -397,6 +403,33 @@ function createEdgeHighlight(p1, p2, color) {
     return tube;
 }
 
+function deselectAll() {
+    selectedMeshes.forEach(mesh => highlightLayer.removeMesh(mesh));
+    selectedMeshes.length = 0;
+    deselectVertices();
+    deselectEdges();
+    deselectFaces();
+    updateStatusBar();
+}
+
+function deselectVertices() {
+    selectedVertices.forEach(v => v.highlight.dispose());
+    selectedVertices.length = 0;
+    updateStatusBar();
+}
+
+function deselectEdges() {
+    selectedEdges.forEach(e => e.highlight.dispose());
+    selectedEdges.length = 0;
+    updateStatusBar();
+}
+
+function deselectFaces() {
+    selectedFaces.forEach(f => f.highlights.forEach(h => h.dispose()));
+    selectedFaces.length = 0;
+    updateStatusBar();
+}
+
 function updateVertexHighlights() {
     selectedVertices.forEach(v => {
         const positions = v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
@@ -425,6 +458,17 @@ canvas.addEventListener("pointerdown", (e) => {
         isDragging = false;
         pressTimer = window.setTimeout(() => {
             if (!isDragging) {
+                const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
+                if (pickInfo.hit) {
+                    addButton.style.display = "none";
+                    deselectButton.style.display = "flex";
+                    deselectAllButton.style.display = "flex";
+                } else {
+                    addButton.style.display = "flex";
+                    deselectButton.style.display = "none";
+                    deselectAllButton.style.display = "flex";
+                }
+
                 contextMenu.style.display = "flex";
                 contextMenu.style.left = `${e.clientX}px`;
                 contextMenu.style.top = `${e.clientY}px`;
@@ -575,6 +619,7 @@ window.addEventListener("pointerup", (e) => {
     if (!e.target.closest(".context-menu") && !e.target.closest("#gui")) {
         contextMenu.style.display = "none";
         addSubmenu.style.display = "none";
+        deselectSubmenu.style.display = "none";
         fileMenu.style.display = "none";
     }
 });
@@ -588,6 +633,13 @@ addButton.addEventListener("pointerenter", () => {
     const rect = addButton.getBoundingClientRect();
     addSubmenu.style.left = `${rect.right}px`;
     addSubmenu.style.top = `${rect.top}px`;
+});
+
+deselectButton.addEventListener("pointerenter", () => {
+    deselectSubmenu.style.display = "flex";
+    const rect = deselectButton.getBoundingClientRect();
+    deselectSubmenu.style.left = `${rect.right}px`;
+    deselectSubmenu.style.top = `${rect.top}px`;
 });
 
 addSubmenu.addEventListener("click", (e) => {
@@ -609,4 +661,21 @@ addSubmenu.addEventListener("click", (e) => {
     }
     contextMenu.style.display = "none";
     addSubmenu.style.display = "none";
+});
+
+deselectAllButton.addEventListener("click", () => {
+    deselectAll();
+    contextMenu.style.display = "none";
+});
+
+deselectSubmenu.addEventListener("click", (e) => {
+    if (e.target.id === "deselect-vertices") {
+        deselectVertices();
+    } else if (e.target.id === "deselect-edges") {
+        deselectEdges();
+    } else if (e.target.id === "deselect-faces") {
+        deselectFaces();
+    }
+    contextMenu.style.display = "none";
+    deselectSubmenu.style.display = "none";
 });
