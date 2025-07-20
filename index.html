@@ -126,18 +126,39 @@
         }
         #settings-window {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        #settings-container {
             width: 600px;
+            max-width: 90vw;
             height: 400px;
+            max-height: 90vh;
             background-color: rgba(50, 50, 50, 0.9);
             border: 1px solid #555;
             border-radius: 10px;
-            display: none;
+            display: flex;
             flex-direction: row;
             color: white;
             font-family: sans-serif;
+            position: relative;
+        }
+        #close-settings {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
         }
         #settings-categories {
             width: 150px;
@@ -226,15 +247,18 @@
     <div id="status-bar"></div>
     <div id="hint-bar"></div>
     <div id="settings-window">
-        <div id="settings-categories">
-            <button class="active" data-category="selection-settings">Selection</button>
-        </div>
-        <div id="settings-content">
-            <div id="selection-settings" class="settings-category">
-                <div class="setting">
-                    <label for="vertex-selection-radius">Vertex Selection Radius</label>
-                    <input type="range" id="vertex-selection-radius" min="20" max="200" value="100">
-                    <span id="vertex-selection-radius-value">100</span>
+        <div id="settings-container">
+            <button id="close-settings">&times;</button>
+            <div id="settings-categories">
+                <button class="active" data-category="selection-settings">Selection</button>
+            </div>
+            <div id="settings-content">
+                <div id="selection-settings" class="settings-category">
+                    <div class="setting">
+                        <label for="vertex-selection-radius">Vertex Selection Radius</label>
+                        <input type="range" id="vertex-selection-radius" min="20" max="200" value="100">
+                        <span id="vertex-selection-radius-value">100</span>
+                    </div>
                 </div>
             </div>
         </div>

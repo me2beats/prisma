@@ -100,6 +100,7 @@ const fileButton = document.getElementById("file-button");
 const fileMenu = document.getElementById("file-menu");
 const settingsButton = document.querySelector("#gui button:nth-child(2)");
 const settingsWindow = document.getElementById("settings-window");
+const closeSettingsButton = document.getElementById("close-settings");
 const settingsCategories = document.getElementById("settings-categories");
 const settingsContent = document.getElementById("settings-content");
 
@@ -107,8 +108,20 @@ fileButton.addEventListener("click", () => {
     fileMenu.style.display = fileMenu.style.display === "flex" ? "none" : "flex";
 });
 
-settingsButton.addEventListener("click", () => {
-    settingsWindow.style.display = settingsWindow.style.display === "flex" ? "none" : "flex";
+function openSettings() {
+    settingsWindow.style.display = "flex";
+}
+
+function closeSettings() {
+    settingsWindow.style.display = "none";
+}
+
+settingsButton.addEventListener("click", openSettings);
+closeSettingsButton.addEventListener("click", closeSettings);
+settingsWindow.addEventListener("click", (e) => {
+    if (e.target === settingsWindow) {
+        closeSettings();
+    }
 });
 
 settingsCategories.addEventListener("click", (e) => {
@@ -278,6 +291,15 @@ function createVertexHighlight(position) {
     return sphere;
 }
 
+function updateVertexHighlights() {
+    selectedVertices.forEach(v => {
+        const positions = v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+        const vertexPosition = new BABYLON.Vector3(positions[v.index * 3], positions[v.index * 3 + 1], positions[v.index * 3 + 2]);
+        const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertexPosition, v.mesh.getWorldMatrix());
+        v.highlight.position = transformedVertex;
+    });
+}
+
 initActionManager(scene, createTriangle, createQuad, createCube, updateStatusBar);
 updateStatusBar();
 
@@ -323,6 +345,9 @@ canvas.addEventListener("pointerdown", (e) => {
                     highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
                     const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
                     pointerDragBehavior.enabled = activeModes.includes("translate");
+                    pointerDragBehavior.onDragObservable.add(() => {
+                        updateVertexHighlights();
+                    });
                     mesh.addBehavior(pointerDragBehavior);
                 }
                 updateStatusBar();

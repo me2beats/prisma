@@ -12,4 +12,5 @@ export function createGrid(scene, size) {
 
     const lineSystem = BABYLON.MeshBuilder.CreateLineSystem("lineSystem", {lines: lines}, scene);
     lineSystem.color = color;
+    lineSystem.isPickable = false;
 }
