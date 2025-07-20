@@ -85,14 +85,14 @@ function updateFaceHighlights() {
 
 function updateEdgeHighlights() {
     selectedEdges.forEach(edge => {
-        edge.highlight.dispose();
         const positions = edge.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
         const p1 = new BABYLON.Vector3(positions[edge.indices[0] * 3], positions[edge.indices[0] * 3 + 1], positions[edge.indices[0] * 3 + 2]);
         const p2 = new BABYLON.Vector3(positions[edge.indices[1] * 3], positions[edge.indices[1] * 3 + 1], positions[edge.indices[1] * 3 + 2]);
         const transformedP1 = BABYLON.Vector3.TransformCoordinates(p1, edge.mesh.getWorldMatrix());
         const transformedP2 = BABYLON.Vector3.TransformCoordinates(p2, edge.mesh.getWorldMatrix());
 
-        edge.highlight = createEdgeHighlight(transformedP1, transformedP2, new BABYLON.Color3(1, 0, 0));
+        const path = [transformedP1, transformedP2];
+        edge.highlight = BABYLON.MeshBuilder.CreateTube(null, { path: path, instance: edge.highlight });
     });
 }
 
@@ -290,6 +290,10 @@ const deselectSubmenu = document.getElementById("deselect-submenu");
 const deselectVerticesButton = document.getElementById("deselect-vertices");
 const deselectEdgesButton = document.getElementById("deselect-edges");
 const deselectFacesButton = document.getElementById("deselect-faces");
+const objectButton = document.getElementById("object");
+const objectSubmenu = document.getElementById("object-submenu");
+const objectDeleteButton = document.getElementById("object-delete");
+const objectDuplicateButton = document.getElementById("object-duplicate");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
 const statusBar = document.getElementById("status-bar");
@@ -413,20 +417,23 @@ function deselectAll() {
 }
 
 function deselectVertices() {
-    selectedVertices.forEach(v => v.highlight.dispose());
-    selectedVertices.length = 0;
+    const verticesToDeselect = contextMesh ? selectedVertices.filter(v => v.mesh === contextMesh) : selectedVertices;
+    verticesToDeselect.forEach(v => v.highlight.dispose());
+    selectedVertices = contextMesh ? selectedVertices.filter(v => v.mesh !== contextMesh) : [];
     updateStatusBar();
 }
 
 function deselectEdges() {
-    selectedEdges.forEach(e => e.highlight.dispose());
-    selectedEdges.length = 0;
+    const edgesToDeselect = contextMesh ? selectedEdges.filter(e => e.mesh === contextMesh) : selectedEdges;
+    edgesToDeselect.forEach(e => e.highlight.dispose());
+    selectedEdges = contextMesh ? selectedEdges.filter(e => e.mesh !== contextMesh) : [];
     updateStatusBar();
 }
 
 function deselectFaces() {
-    selectedFaces.forEach(f => f.highlights.forEach(h => h.dispose()));
-    selectedFaces.length = 0;
+    const facesToDeselect = contextMesh ? selectedFaces.filter(f => f.mesh === contextMesh) : selectedFaces;
+    facesToDeselect.forEach(f => f.highlights.forEach(h => h.dispose()));
+    selectedFaces = contextMesh ? selectedFaces.filter(f => f.mesh !== contextMesh) : [];
     updateStatusBar();
 }
 
@@ -449,6 +456,7 @@ let pressTimer;
 let startX, startY;
 let isDragging = false;
 let menuJustOpened = false;
+let contextMesh = null;
 
 canvas.addEventListener("pointerdown", (e) => {
     // Context menu on right-click or long-press
@@ -460,12 +468,16 @@ canvas.addEventListener("pointerdown", (e) => {
             if (!isDragging) {
                 const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
                 if (pickInfo.hit) {
+                    contextMesh = pickInfo.pickedMesh;
                     addButton.style.display = "none";
                     deselectButton.style.display = "flex";
+                    objectButton.style.display = "flex";
                     deselectAllButton.style.display = "flex";
                 } else {
+                    contextMesh = null;
                     addButton.style.display = "flex";
                     deselectButton.style.display = "none";
+                    objectButton.style.display = "none";
                     deselectAllButton.style.display = "flex";
                 }
 
@@ -620,6 +632,7 @@ window.addEventListener("pointerup", (e) => {
         contextMenu.style.display = "none";
         addSubmenu.style.display = "none";
         deselectSubmenu.style.display = "none";
+        objectSubmenu.style.display = "none";
         fileMenu.style.display = "none";
     }
 });
@@ -668,6 +681,13 @@ deselectAllButton.addEventListener("click", () => {
     contextMenu.style.display = "none";
 });
 
+objectButton.addEventListener("pointerenter", () => {
+    objectSubmenu.style.display = "flex";
+    const rect = objectButton.getBoundingClientRect();
+    objectSubmenu.style.left = `${rect.right}px`;
+    objectSubmenu.style.top = `${rect.top}px`;
+});
+
 deselectSubmenu.addEventListener("click", (e) => {
     if (e.target.id === "deselect-vertices") {
         deselectVertices();
@@ -678,4 +698,19 @@ deselectSubmenu.addEventListener("click", (e) => {
     }
     contextMenu.style.display = "none";
     deselectSubmenu.style.display = "none";
+});
+
+objectSubmenu.addEventListener("click", (e) => {
+    if (e.target.id === "object-delete") {
+        if (contextMesh) {
+            contextMesh.dispose();
+        }
+    } else if (e.target.id === "object-duplicate") {
+        if (contextMesh) {
+            const newMesh = contextMesh.clone("duplicated_mesh");
+            newMesh.position.x += 1;
+        }
+    }
+    contextMenu.style.display = "none";
+    objectSubmenu.style.display = "none";
 });
