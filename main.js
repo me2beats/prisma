@@ -291,6 +291,15 @@ function createVertexHighlight(position) {
     return sphere;
 }
 
+function updateVertexHighlights() {
+    selectedVertices.forEach(v => {
+        const positions = v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+        const vertexPosition = new BABYLON.Vector3(positions[v.index * 3], positions[v.index * 3 + 1], positions[v.index * 3 + 2]);
+        const transformedVertex = BABYLON.Vector3.TransformCoordinates(vertexPosition, v.mesh.getWorldMatrix());
+        v.highlight.position = transformedVertex;
+    });
+}
+
 initActionManager(scene, createTriangle, createQuad, createCube, updateStatusBar);
 updateStatusBar();
 
@@ -336,6 +345,9 @@ canvas.addEventListener("pointerdown", (e) => {
                     highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
                     const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
                     pointerDragBehavior.enabled = activeModes.includes("translate");
+                    pointerDragBehavior.onDragObservable.add(() => {
+                        updateVertexHighlights();
+                    });
                     mesh.addBehavior(pointerDragBehavior);
                 }
                 updateStatusBar();

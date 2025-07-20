@@ -7,6 +7,7 @@ export function createAxes(scene, size) {
         ]
     }, scene);
     axisX.color = new BABYLON.Color3(1, 0, 0);
+    axisX.isPickable = false;
 
     const axisZ = BABYLON.MeshBuilder.CreateLines("axisZ", {
         points: [
@@ -14,4 +15,5 @@ export function createAxes(scene, size) {
         ]
     }, scene);
     axisZ.color = new BABYLON.Color3(0, 0, 1);
+    axisZ.isPickable = false;
 }
