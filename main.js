@@ -56,7 +56,7 @@ gizmoManager.gizmos.positionGizmo.onDragObservable.add(() => {
         const initialPos = initialVertexPositions.get(v.index);
 
         if (initialPos) {
-            const newPos = initialPos.add(data.localDelta);
+            const newPos = initialPos.clone().add(data.localDelta);
             data.positions[v.index * 3] = newPos.x;
             data.positions[v.index * 3 + 1] = newPos.y;
             data.positions[v.index * 3 + 2] = newPos.z;
