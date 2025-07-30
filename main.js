@@ -479,10 +479,26 @@ canvas.addEventListener("pointerdown", (e) => {
                     highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
                     const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
                     pointerDragBehavior.enabled = activeModes.includes("translate");
+
+                    let initialPosition;
+                    pointerDragBehavior.onDragStartObservable.add(() => {
+                        initialPosition = mesh.position.clone();
+                    });
+
                     pointerDragBehavior.onDragObservable.add(() => {
                         updateVertexHighlights();
                         updateEdgeHighlights();
                         updateFaceHighlights();
+                    });
+
+                    pointerDragBehavior.onDragEndObservable.add(() => {
+                        const finalPosition = mesh.position.clone();
+                        addAction({
+                            type: 'translation',
+                            mesh: mesh,
+                            initialPosition: initialPosition,
+                            finalPosition: finalPosition,
+                        });
                     });
                     mesh.addBehavior(pointerDragBehavior);
                 }

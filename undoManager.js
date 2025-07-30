@@ -23,6 +23,8 @@ export function undo() {
     const action = undoStack.pop();
     if (action.type === 'creation') {
         action.mesh.dispose();
+    } else if (action.type === 'translation') {
+        action.mesh.position = action.initialPosition;
     }
     redoStack.push(action);
     if (onAction) onAction();
@@ -40,6 +42,8 @@ export function redo() {
         } else if (action.meshType === 'cube') {
             newMesh = createCube(scene);
         }
+    } else if (action.type === 'translation') {
+        action.mesh.position = action.finalPosition;
     }
     if (newMesh) {
         action.mesh = newMesh;
