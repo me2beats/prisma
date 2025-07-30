@@ -24,7 +24,7 @@ export function undo() {
     if (action.type === 'creation') {
         action.mesh.dispose();
     } else if (action.type === 'translation') {
-        action.mesh.position = action.initialPosition;
+        action.mesh.position.copyFrom(action.initialPosition);
     }
     redoStack.push(action);
     if (onAction) onAction();
@@ -43,7 +43,7 @@ export function redo() {
             newMesh = createCube(scene);
         }
     } else if (action.type === 'translation') {
-        action.mesh.position = action.finalPosition;
+        action.mesh.position.copyFrom(action.finalPosition);
     }
     if (newMesh) {
         action.mesh = newMesh;
