@@ -17,8 +17,8 @@ createAxes(scene, size);
 // Gizmo Manager
 const gizmoManager = new BABYLON.GizmoManager(scene);
 gizmoManager.positionGizmoEnabled = true;
-gizmoManager.rotationGizmoEnabled = true;
-gizmoManager.scaleGizmoEnabled = true;
+gizmoManager.rotationGizmoEnabled = false;
+gizmoManager.scaleGizmoEnabled = false;
 gizmoManager.attachToNode(null); // Detach by default
 
 const controlNode = new BABYLON.TransformNode("gizmoControlNode", scene);
@@ -39,18 +39,24 @@ gizmoManager.gizmos.positionGizmo.onDragStartObservable.add(() => {
 });
 
 gizmoManager.gizmos.positionGizmo.onDragObservable.add(() => {
-    const delta = controlNode.position.subtract(controlNodeInitialPosition);
+    const worldDelta = controlNode.position.subtract(controlNodeInitialPosition);
     const updatedMeshes = new Map();
 
     getAllSelectedVertices().forEach(v => {
-        const initialPos = initialVertexPositions.get(v.index);
-        if (initialPos) {
-            const newPos = initialPos.add(delta);
+        if (!updatedMeshes.has(v.mesh.id)) {
+            const invWorldMatrix = v.mesh.getWorldMatrix().clone().invert();
+            updatedMeshes.set(v.mesh.id, {
+                mesh: v.mesh,
+                positions: v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
+                localDelta: BABYLON.Vector3.TransformNormal(worldDelta, invWorldMatrix)
+            });
+        }
 
-            if (!updatedMeshes.has(v.mesh.id)) {
-                updatedMeshes.set(v.mesh.id, { mesh: v.mesh, positions: v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind) });
-            }
-            const data = updatedMeshes.get(v.mesh.id);
+        const data = updatedMeshes.get(v.mesh.id);
+        const initialPos = initialVertexPositions.get(v.index);
+
+        if (initialPos) {
+            const newPos = initialPos.add(data.localDelta);
             data.positions[v.index * 3] = newPos.x;
             data.positions[v.index * 3 + 1] = newPos.y;
             data.positions[v.index * 3 + 2] = newPos.z;
