@@ -14,6 +14,81 @@ const size = 50;
 createGrid(scene, size);
 createAxes(scene, size);
 
+// Gizmo Manager
+const gizmoManager = new BABYLON.GizmoManager(scene);
+gizmoManager.positionGizmoEnabled = true;
+gizmoManager.rotationGizmoEnabled = true;
+gizmoManager.scaleGizmoEnabled = true;
+gizmoManager.attachToNode(null); // Detach by default
+
+const controlNode = new BABYLON.TransformNode("gizmoControlNode", scene);
+
+const initialVertexPositions = new Map();
+let controlNodeInitialPosition = new BABYLON.Vector3();
+
+gizmoManager.gizmos.positionGizmo.onDragStartObservable.add(() => {
+    initialVertexPositions.clear();
+    const allSelectedVertices = getAllSelectedVertices();
+    controlNodeInitialPosition.copyFrom(controlNode.position);
+
+    allSelectedVertices.forEach(v => {
+        const positions = v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+        const p = new BABYLON.Vector3(positions[v.index * 3], positions[v.index * 3 + 1], positions[v.index * 3 + 2]);
+        initialVertexPositions.set(v.index, p);
+    });
+});
+
+gizmoManager.gizmos.positionGizmo.onDragObservable.add(() => {
+    const delta = controlNode.position.subtract(controlNodeInitialPosition);
+    const updatedMeshes = new Map();
+
+    getAllSelectedVertices().forEach(v => {
+        const initialPos = initialVertexPositions.get(v.index);
+        if (initialPos) {
+            const newPos = initialPos.add(delta);
+
+            if (!updatedMeshes.has(v.mesh.id)) {
+                updatedMeshes.set(v.mesh.id, { mesh: v.mesh, positions: v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind) });
+            }
+            const data = updatedMeshes.get(v.mesh.id);
+            data.positions[v.index * 3] = newPos.x;
+            data.positions[v.index * 3 + 1] = newPos.y;
+            data.positions[v.index * 3 + 2] = newPos.z;
+        }
+    });
+
+    updatedMeshes.forEach(data => {
+        data.mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, data.positions, false, false);
+    });
+
+    updateVertexHighlights();
+    updateEdgeHighlights();
+    updateFaceHighlights();
+});
+
+gizmoManager.gizmos.positionGizmo.onDragEndObservable.add(() => {
+    const finalVertexPositions = new Map();
+    const allSelectedVertices = getAllSelectedVertices();
+
+    if (allSelectedVertices.size === 0) return;
+
+    allSelectedVertices.forEach(v => {
+        const positions = v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+        const p = new BABYLON.Vector3(positions[v.index * 3], positions[v.index * 3 + 1], positions[v.index * 3 + 2]);
+        finalVertexPositions.set(v.index, p);
+    });
+
+    const firstVertex = allSelectedVertices.values().next().value;
+
+    addAction({
+        type: 'subcomponentTranslation',
+        meshId: firstVertex.mesh.id,
+        initialPositions: new Map(initialVertexPositions),
+        finalPositions: finalVertexPositions,
+    });
+});
+
+
 const fpsMeter = document.getElementById("fps-meter");
 
 engine.runRenderLoop(function () {
@@ -378,6 +453,68 @@ function createEdgeHighlight(p1, p2, color) {
     return tube;
 }
 
+function getAllSelectedVertices() {
+    const allSelectedVertices = new Map();
+
+    selectedVertices.forEach(v => {
+        const key = `${v.mesh.id}-${v.index}`;
+        if (!allSelectedVertices.has(key)) {
+            allSelectedVertices.set(key, v);
+        }
+    });
+
+    selectedEdges.forEach(e => {
+        const key1 = `${e.mesh.id}-${e.indices[0]}`;
+        if (!allSelectedVertices.has(key1)) {
+            allSelectedVertices.set(key1, {mesh: e.mesh, index: e.indices[0]});
+        }
+        const key2 = `${e.mesh.id}-${e.indices[1]}`;
+        if (!allSelectedVertices.has(key2)) {
+            allSelectedVertices.set(key2, {mesh: e.mesh, index: e.indices[1]});
+        }
+    });
+
+    selectedFaces.forEach(f => {
+        const indices = f.mesh.getIndices();
+        const i1 = indices[f.faceId * 3];
+        const i2 = indices[f.faceId * 3 + 1];
+        const i3 = indices[f.faceId * 3 + 2];
+
+        const key1 = `${f.mesh.id}-${i1}`;
+        if (!allSelectedVertices.has(key1)) {
+            allSelectedVertices.set(key1, {mesh: f.mesh, index: i1});
+        }
+        const key2 = `${f.mesh.id}-${i2}`;
+        if (!allSelectedVertices.has(key2)) {
+            allSelectedVertices.set(key2, {mesh: f.mesh, index: i2});
+        }
+        const key3 = `${f.mesh.id}-${i3}`;
+        if (!allSelectedVertices.has(key3)) {
+            allSelectedVertices.set(key3, {mesh: f.mesh, index: i3});
+        }
+    });
+    return allSelectedVertices;
+}
+
+function updateGizmo() {
+    const allSelectedVertices = getAllSelectedVertices();
+
+    if (allSelectedVertices.size > 0) {
+        const center = new BABYLON.Vector3(0, 0, 0);
+        allSelectedVertices.forEach(v => {
+            const positions = v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+            const p = new BABYLON.Vector3(positions[v.index * 3], positions[v.index * 3 + 1], positions[v.index * 3 + 2]);
+            const worldP = BABYLON.Vector3.TransformCoordinates(p, v.mesh.getWorldMatrix());
+            center.addInPlace(worldP);
+        });
+        center.scaleInPlace(1 / allSelectedVertices.size);
+        controlNode.position = center;
+        gizmoManager.attachToNode(controlNode);
+    } else {
+        gizmoManager.attachToNode(null);
+    }
+}
+
 function deselectAll() {
     selectedMeshes.forEach(mesh => highlightLayer.removeMesh(mesh));
     selectedMeshes.length = 0;
@@ -385,6 +522,7 @@ function deselectAll() {
     deselectEdges();
     deselectFaces();
     updateStatusBar();
+    updateGizmo();
 }
 
 function deselectVertices() {
@@ -392,6 +530,7 @@ function deselectVertices() {
     verticesToDeselect.forEach(v => v.highlight.dispose());
     selectedVertices = contextMesh ? selectedVertices.filter(v => v.mesh !== contextMesh) : [];
     updateStatusBar();
+    updateGizmo();
 }
 
 function deselectEdges() {
@@ -399,6 +538,7 @@ function deselectEdges() {
     edgesToDeselect.forEach(e => e.highlight.dispose());
     selectedEdges = contextMesh ? selectedEdges.filter(e => e.mesh !== contextMesh) : [];
     updateStatusBar();
+    updateGizmo();
 }
 
 function deselectFaces() {
@@ -406,6 +546,7 @@ function deselectFaces() {
     facesToDeselect.forEach(f => f.highlights.forEach(h => h.dispose()));
     selectedFaces = contextMesh ? selectedFaces.filter(f => f.mesh !== contextMesh) : [];
     updateStatusBar();
+    updateGizmo();
 }
 
 function updateVertexHighlights() {
@@ -526,6 +667,7 @@ canvas.addEventListener("pointerdown", (e) => {
                         selectedVertices.push({ mesh, index: closestVertexIndex, highlight });
                     }
                     updateStatusBar();
+                    updateGizmo();
                 }
             }
         }
@@ -583,6 +725,7 @@ canvas.addEventListener("pointerdown", (e) => {
                         const highlight = createEdgeHighlight(worldP1, worldP2, new BABYLON.Color3(1, 0, 0));
                         selectedEdges.push({ mesh, indices: closestEdge.indices, highlight });
                     }
+                    updateGizmo();
                 }
             }
         }
@@ -620,6 +763,7 @@ canvas.addEventListener("pointerdown", (e) => {
                         const highlight3 = createEdgeHighlight(transformedP3, transformedP1, new BABYLON.Color3(0, 1, 0));
                         selectedFaces.push({ mesh, faceId, highlights: [highlight1, highlight2, highlight3] });
                     }
+                    updateGizmo();
                 }
             }
         }

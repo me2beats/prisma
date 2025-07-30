@@ -38,6 +38,17 @@ export function undo() {
         if (mesh) {
             mesh.position.copyFrom(action.initialPosition);
         }
+    } else if (action.type === 'subcomponentTranslation') {
+        const mesh = scene.getMeshById(action.meshId);
+        if (mesh) {
+            const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+            action.initialPositions.forEach((pos, index) => {
+                positions[index * 3] = pos.x;
+                positions[index * 3 + 1] = pos.y;
+                positions[index * 3 + 2] = pos.z;
+            });
+            mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions, false, false);
+        }
     }
     redoStack.push(action);
     if (onAction) onAction();
@@ -66,6 +77,17 @@ export function redo() {
         const mesh = scene.getMeshById(action.meshId);
         if (mesh) {
             mesh.position.copyFrom(action.finalPosition);
+        }
+    } else if (action.type === 'subcomponentTranslation') {
+        const mesh = scene.getMeshById(action.meshId);
+        if (mesh) {
+            const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+            action.finalPositions.forEach((pos, index) => {
+                positions[index * 3] = pos.x;
+                positions[index * 3 + 1] = pos.y;
+                positions[index * 3 + 2] = pos.z;
+            });
+            mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions, false, false);
         }
     }
     undoStack.push(action);
