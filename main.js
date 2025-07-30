@@ -355,6 +355,15 @@ function createVertexHighlight(position) {
     return sphere;
 }
 
+function distanceToSegment(p, a, b) {
+    const l2 = BABYLON.Vector2.DistanceSquared(a, b);
+    if (l2 === 0) return BABYLON.Vector2.Distance(p, a);
+    let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const closestPoint = new BABYLON.Vector2(a.x + t * (b.x - a.x), a.y + t * (b.y - a.y));
+    return BABYLON.Vector2.Distance(p, closestPoint);
+}
+
 function getClosestEdge(mesh, screenPoint) {
     const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
     const indices = mesh.getIndices();
@@ -377,16 +386,18 @@ function getClosestEdge(mesh, screenPoint) {
         ];
 
         edges.forEach(edge => {
-            const worldP1 = BABYLON.Vector3.TransformCoordinates(edge.p1, mesh.getWorldMatrix());
-            const worldP2 = BABYLON.Vector3.TransformCoordinates(edge.p2, mesh.getWorldMatrix());
-            const proj1 = BABYLON.Vector3.Project(worldP1, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
-            const proj2 = BABYLON.Vector3.Project(worldP2, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+            const proj1 = BABYLON.Vector3.Project(edge.p1, mesh.getWorldMatrix(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+            const proj2 = BABYLON.Vector3.Project(edge.p2, mesh.getWorldMatrix(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
 
-            const dist = BABYLON.Vector2.Distance(screenPoint, new BABYLON.Vector2(proj1.x, proj1.y)) + BABYLON.Vector2.Distance(screenPoint, new BABYLON.Vector2(proj2.x, proj2.y));
-            const edgeLength = BABYLON.Vector2.Distance(new BABYLON.Vector2(proj1.x, proj1.y), new BABYLON.Vector2(proj2.x, proj2.y));
+            const screenP1 = new BABYLON.Vector2(proj1.x, proj1.y);
+            const screenP2 = new BABYLON.Vector2(proj2.x, proj2.y);
 
-            if (dist < minDistance && dist < edgeLength + 20) {
+            const dist = distanceToSegment(screenPoint, screenP1, screenP2);
+
+            if (dist < 20 && dist < minDistance) {
                 minDistance = dist;
+                const worldP1 = BABYLON.Vector3.TransformCoordinates(edge.p1, mesh.getWorldMatrix());
+                const worldP2 = BABYLON.Vector3.TransformCoordinates(edge.p2, mesh.getWorldMatrix());
                 closestEdge = { p1: worldP1, p2: worldP2, indices: edge.indices.sort() };
             }
         });
