@@ -355,44 +355,13 @@ function createVertexHighlight(position) {
     return sphere;
 }
 
-function getClosestEdge(mesh, screenPoint) {
-    const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-    const indices = mesh.getIndices();
-    let minDistance = Infinity;
-    let closestEdge = null;
-
-    for (let i = 0; i < indices.length; i += 3) {
-        const i1 = indices[i];
-        const i2 = indices[i+1];
-        const i3 = indices[i+2];
-
-        const p1 = new BABYLON.Vector3(positions[i1 * 3], positions[i1 * 3 + 1], positions[i1 * 3 + 2]);
-        const p2 = new BABYLON.Vector3(positions[i2 * 3], positions[i2 * 3 + 1], positions[i2 * 3 + 2]);
-        const p3 = new BABYLON.Vector3(positions[i3 * 3], positions[i3 * 3 + 1], positions[i3 * 3 + 2]);
-
-        const edges = [
-            { p1, p2, indices: [i1, i2] },
-            { p1: p2, p2: p3, indices: [i2, i3] },
-            { p1: p3, p2: p1, indices: [i3, i1] },
-        ];
-
-        edges.forEach(edge => {
-            const worldP1 = BABYLON.Vector3.TransformCoordinates(edge.p1, mesh.getWorldMatrix());
-            const worldP2 = BABYLON.Vector3.TransformCoordinates(edge.p2, mesh.getWorldMatrix());
-            const proj1 = BABYLON.Vector3.Project(worldP1, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
-            const proj2 = BABYLON.Vector3.Project(worldP2, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
-
-            const dist = BABYLON.Vector2.Distance(screenPoint, new BABYLON.Vector2(proj1.x, proj1.y)) + BABYLON.Vector2.Distance(screenPoint, new BABYLON.Vector2(proj2.x, proj2.y));
-            const edgeLength = BABYLON.Vector2.Distance(new BABYLON.Vector2(proj1.x, proj1.y), new BABYLON.Vector2(proj2.x, proj2.y));
-
-            if (dist < minDistance && dist < edgeLength + 20) {
-                minDistance = dist;
-                closestEdge = { p1: worldP1, p2: worldP2, indices: edge.indices.sort() };
-            }
-        });
-    }
-
-    return closestEdge;
+function distanceToSegment(p, a, b) {
+    const l2 = BABYLON.Vector2.DistanceSquared(a, b);
+    if (l2 === 0) return BABYLON.Vector2.Distance(p, a);
+    let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const closestPoint = new BABYLON.Vector2(a.x + t * (b.x - a.x), a.y + t * (b.y - a.y));
+    return BABYLON.Vector2.Distance(p, closestPoint);
 }
 
 function createEdgeHighlight(p1, p2, color) {
@@ -510,10 +479,26 @@ canvas.addEventListener("pointerdown", (e) => {
                     highlightLayer.addMesh(mesh, BABYLON.Color3.Green());
                     const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0,0,1)});
                     pointerDragBehavior.enabled = activeModes.includes("translate");
+
+                    let initialPosition;
+                    pointerDragBehavior.onDragStartObservable.add(() => {
+                        initialPosition = mesh.position.clone();
+                    });
+
                     pointerDragBehavior.onDragObservable.add(() => {
                         updateVertexHighlights();
                         updateEdgeHighlights();
                         updateFaceHighlights();
+                    });
+
+                    pointerDragBehavior.onDragEndObservable.add(() => {
+                        const finalPosition = mesh.position.clone();
+                        addAction({
+                            type: 'translation',
+                            meshId: mesh.id,
+                            initialPosition: initialPosition,
+                            finalPosition: finalPosition,
+                        });
                     });
                     mesh.addBehavior(pointerDragBehavior);
                 }
@@ -549,14 +534,53 @@ canvas.addEventListener("pointerdown", (e) => {
         if (activeModes.includes("select-edge")) {
             if (pickInfo.hit && pickInfo.pickedMesh.name !== "lineSystem" && pickInfo.pickedMesh.name !== "axisX" && pickInfo.pickedMesh.name !== "axisZ") {
                 const mesh = pickInfo.pickedMesh;
-                const closestEdge = getClosestEdge(mesh, new BABYLON.Vector2(scene.pointerX, scene.pointerY));
+                const faceId = pickInfo.faceId;
+
+                if (faceId === -1) return;
+
+                const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+                const indices = mesh.getIndices();
+
+                const i1 = indices[faceId * 3];
+                const i2 = indices[faceId * 3 + 1];
+                const i3 = indices[faceId * 3 + 2];
+
+                const p1 = new BABYLON.Vector3(positions[i1 * 3], positions[i1 * 3 + 1], positions[i1 * 3 + 2]);
+                const p2 = new BABYLON.Vector3(positions[i2 * 3], positions[i2 * 3 + 1], positions[i2 * 3 + 2]);
+                const p3 = new BABYLON.Vector3(positions[i3 * 3], positions[i3 * 3 + 1], positions[i3 * 3 + 2]);
+
+                const edges = [
+                    { p1, p2, indices: [i1, i2].sort() },
+                    { p1: p2, p2: p3, indices: [i2, i3].sort() },
+                    { p1: p3, p2: p1, indices: [i3, i1].sort() },
+                ];
+
+                let minDistance = Infinity;
+                let closestEdge = null;
+                const screenPoint = new BABYLON.Vector2(scene.pointerX, scene.pointerY);
+
+                edges.forEach(edge => {
+                    const proj1 = BABYLON.Vector3.Project(edge.p1, mesh.getWorldMatrix(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+                    const proj2 = BABYLON.Vector3.Project(edge.p2, mesh.getWorldMatrix(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+                    const screenP1 = new BABYLON.Vector2(proj1.x, proj1.y);
+                    const screenP2 = new BABYLON.Vector2(proj2.x, proj2.y);
+                    const dist = distanceToSegment(screenPoint, screenP1, screenP2);
+
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        closestEdge = edge;
+                    }
+                });
+
                 if (closestEdge) {
                     const existingSelection = selectedEdges.find(e => e.mesh === mesh && e.indices[0] === closestEdge.indices[0] && e.indices[1] === closestEdge.indices[1]);
                     if (existingSelection) {
                         existingSelection.highlight.dispose();
                         selectedEdges.splice(selectedEdges.indexOf(existingSelection), 1);
                     } else {
-                        const highlight = createEdgeHighlight(closestEdge.p1, closestEdge.p2, new BABYLON.Color3(1, 0, 0));
+                        const worldP1 = BABYLON.Vector3.TransformCoordinates(closestEdge.p1, mesh.getWorldMatrix());
+                        const worldP2 = BABYLON.Vector3.TransformCoordinates(closestEdge.p2, mesh.getWorldMatrix());
+                        const highlight = createEdgeHighlight(worldP1, worldP2, new BABYLON.Color3(1, 0, 0));
                         selectedEdges.push({ mesh, indices: closestEdge.indices, highlight });
                     }
                 }
@@ -671,7 +695,8 @@ addSubmenu.addEventListener("click", (e) => {
         meshType = 'cube';
     }
     if (mesh) {
-        addAction({ type: 'creation', mesh: mesh, meshType: meshType });
+        mesh.id = BABYLON.Tools.RandomId();
+        addAction({ type: 'creation', meshId: mesh.id, meshType: meshType });
         updateStatusBar();
     }
     contextMenu.style.display = "none";
