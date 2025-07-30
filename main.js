@@ -40,29 +40,43 @@ gizmoManager.gizmos.positionGizmo.onDragStartObservable.add(() => {
 
 gizmoManager.gizmos.positionGizmo.onDragObservable.add(() => {
     const worldDelta = controlNode.position.subtract(controlNodeInitialPosition);
-    const updatedMeshes = new Map();
+    const meshesToUpdate = new Map();
 
+    // Group vertices by mesh
     getAllSelectedVertices().forEach(v => {
-        const initialLocalPos = initialVertexPositions.get(v.index);
-        if (initialLocalPos) {
-            const initialWorldPos = BABYLON.Vector3.TransformCoordinates(initialLocalPos, v.mesh.getWorldMatrix());
-            const newWorldPos = initialWorldPos.add(worldDelta);
-
-            const invWorldMatrix = v.mesh.getWorldMatrix().clone().invert();
-            const newLocalPos = BABYLON.Vector3.TransformCoordinates(newWorldPos, invWorldMatrix);
-
-            if (!updatedMeshes.has(v.mesh.id)) {
-                updatedMeshes.set(v.mesh.id, { mesh: v.mesh, positions: v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind) });
-            }
-            const data = updatedMeshes.get(v.mesh.id);
-            data.positions[v.index * 3] = newLocalPos.x;
-            data.positions[v.index * 3 + 1] = newLocalPos.y;
-            data.positions[v.index * 3 + 2] = newLocalPos.z;
+        if (!meshesToUpdate.has(v.mesh.id)) {
+            meshesToUpdate.set(v.mesh.id, {
+                mesh: v.mesh,
+                vertices: [],
+            });
         }
+        meshesToUpdate.get(v.mesh.id).vertices.push(v);
     });
 
-    updatedMeshes.forEach(data => {
-        data.mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, data.positions, false, false);
+    meshesToUpdate.forEach(data => {
+        const { mesh, vertices } = data;
+        const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+        const invWorldMatrix = mesh.getWorldMatrix().clone().invert();
+        const localDelta = BABYLON.Vector3.TransformNormal(worldDelta, invWorldMatrix);
+
+        vertices.forEach(v => {
+            const initialPos = initialVertexPositions.get(v.index);
+            if (initialPos) {
+                const newPos = initialPos.clone().add(localDelta);
+                positions[v.index * 3] = newPos.x;
+                positions[v.index * 3 + 1] = newPos.y;
+                positions[v.index * 3 + 2] = newPos.z;
+            }
+        });
+
+        mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions, false, false);
+
+        const indices = mesh.getIndices();
+        const normals = [];
+        BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+        mesh.updateVerticesData(BABYLON.VertexBuffer.NormalKind, normals, false, false);
+
+        mesh.refreshBoundingInfo();
     });
 
     updateVertexHighlights();
