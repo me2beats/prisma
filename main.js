@@ -43,23 +43,21 @@ gizmoManager.gizmos.positionGizmo.onDragObservable.add(() => {
     const updatedMeshes = new Map();
 
     getAllSelectedVertices().forEach(v => {
-        if (!updatedMeshes.has(v.mesh.id)) {
+        const initialLocalPos = initialVertexPositions.get(v.index);
+        if (initialLocalPos) {
+            const initialWorldPos = BABYLON.Vector3.TransformCoordinates(initialLocalPos, v.mesh.getWorldMatrix());
+            const newWorldPos = initialWorldPos.add(worldDelta);
+
             const invWorldMatrix = v.mesh.getWorldMatrix().clone().invert();
-            updatedMeshes.set(v.mesh.id, {
-                mesh: v.mesh,
-                positions: v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
-                localDelta: BABYLON.Vector3.TransformNormal(worldDelta, invWorldMatrix)
-            });
-        }
+            const newLocalPos = BABYLON.Vector3.TransformCoordinates(newWorldPos, invWorldMatrix);
 
-        const data = updatedMeshes.get(v.mesh.id);
-        const initialPos = initialVertexPositions.get(v.index);
-
-        if (initialPos) {
-            const newPos = initialPos.clone().add(data.localDelta);
-            data.positions[v.index * 3] = newPos.x;
-            data.positions[v.index * 3 + 1] = newPos.y;
-            data.positions[v.index * 3 + 2] = newPos.z;
+            if (!updatedMeshes.has(v.mesh.id)) {
+                updatedMeshes.set(v.mesh.id, { mesh: v.mesh, positions: v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind) });
+            }
+            const data = updatedMeshes.get(v.mesh.id);
+            data.positions[v.index * 3] = newLocalPos.x;
+            data.positions[v.index * 3 + 1] = newLocalPos.y;
+            data.positions[v.index * 3 + 2] = newLocalPos.z;
         }
     });
 
