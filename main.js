@@ -495,7 +495,7 @@ canvas.addEventListener("pointerdown", (e) => {
                         const finalPosition = mesh.position.clone();
                         addAction({
                             type: 'translation',
-                            mesh: mesh,
+                            meshId: mesh.id,
                             initialPosition: initialPosition,
                             finalPosition: finalPosition,
                         });
@@ -695,7 +695,8 @@ addSubmenu.addEventListener("click", (e) => {
         meshType = 'cube';
     }
     if (mesh) {
-        addAction({ type: 'creation', mesh: mesh, meshType: meshType });
+        mesh.id = BABYLON.Tools.RandomId();
+        addAction({ type: 'creation', meshId: mesh.id, meshType: meshType });
         updateStatusBar();
     }
     contextMenu.style.display = "none";

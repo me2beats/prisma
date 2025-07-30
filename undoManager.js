@@ -22,9 +22,22 @@ export function undo() {
     if (undoStack.length === 0) return;
     const action = undoStack.pop();
     if (action.type === 'creation') {
-        action.mesh.dispose();
+        const mesh = scene.getMeshById(action.meshId);
+        if (mesh) {
+            action.position = mesh.position.clone();
+            if (mesh.rotationQuaternion) {
+                action.rotationQuaternion = mesh.rotationQuaternion.clone();
+            } else {
+                action.rotation = mesh.rotation.clone();
+            }
+            action.scaling = mesh.scaling.clone();
+            mesh.dispose();
+        }
     } else if (action.type === 'translation') {
-        action.mesh.position.copyFrom(action.initialPosition);
+        const mesh = scene.getMeshById(action.meshId);
+        if (mesh) {
+            mesh.position.copyFrom(action.initialPosition);
+        }
     }
     redoStack.push(action);
     if (onAction) onAction();
@@ -33,8 +46,8 @@ export function undo() {
 export function redo() {
     if (redoStack.length === 0) return;
     const action = redoStack.pop();
-    let newMesh;
     if (action.type === 'creation') {
+        let newMesh;
         if (action.meshType === 'triangle') {
             newMesh = createTriangle(scene);
         } else if (action.meshType === 'quad') {
@@ -42,11 +55,18 @@ export function redo() {
         } else if (action.meshType === 'cube') {
             newMesh = createCube(scene);
         }
+        if (newMesh) {
+            newMesh.id = action.meshId;
+            if (action.position) newMesh.position.copyFrom(action.position);
+            if (action.rotationQuaternion) newMesh.rotationQuaternion.copyFrom(action.rotationQuaternion);
+            if (action.rotation) newMesh.rotation.copyFrom(action.rotation);
+            if (action.scaling) newMesh.scaling.copyFrom(action.scaling);
+        }
     } else if (action.type === 'translation') {
-        action.mesh.position.copyFrom(action.finalPosition);
-    }
-    if (newMesh) {
-        action.mesh = newMesh;
+        const mesh = scene.getMeshById(action.meshId);
+        if (mesh) {
+            mesh.position.copyFrom(action.finalPosition);
+        }
     }
     undoStack.push(action);
     if (onAction) onAction();
