@@ -85,14 +85,14 @@ function updateFaceHighlights() {
 
 function updateEdgeHighlights() {
     selectedEdges.forEach(edge => {
-        edge.highlight.dispose();
         const positions = edge.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
         const p1 = new BABYLON.Vector3(positions[edge.indices[0] * 3], positions[edge.indices[0] * 3 + 1], positions[edge.indices[0] * 3 + 2]);
         const p2 = new BABYLON.Vector3(positions[edge.indices[1] * 3], positions[edge.indices[1] * 3 + 1], positions[edge.indices[1] * 3 + 2]);
-        const transformedP1 = BABYLON.Vector3.TransformCoordinates(p1, edge.mesh.getWorldMatrix());
-        const transformedP2 = BABYLON.Vector3.TransformCoordinates(p2, edge.mesh.getWorldMatrix());
+        const worldP1 = BABYLON.Vector3.TransformCoordinates(p1, edge.mesh.getWorldMatrix());
+        const worldP2 = BABYLON.Vector3.TransformCoordinates(p2, edge.mesh.getWorldMatrix());
 
-        edge.highlight = createEdgeHighlight(transformedP1, transformedP2, new BABYLON.Color3(1, 0, 0));
+        const path = [worldP1, worldP2];
+        edge.highlight = BABYLON.MeshBuilder.CreateTube(null, { path: path, instance: edge.highlight });
     });
 }
 
@@ -284,6 +284,16 @@ importButton.addEventListener("click", () => {
 const contextMenu = document.getElementById("context-menu");
 const addSubmenu = document.getElementById("add-submenu");
 const addButton = document.getElementById("add");
+const deselectAllButton = document.getElementById("deselect-all");
+const deselectButton = document.getElementById("deselect");
+const deselectSubmenu = document.getElementById("deselect-submenu");
+const deselectVerticesButton = document.getElementById("deselect-vertices");
+const deselectEdgesButton = document.getElementById("deselect-edges");
+const deselectFacesButton = document.getElementById("deselect-faces");
+const objectButton = document.getElementById("object");
+const objectSubmenu = document.getElementById("object-submenu");
+const objectDeleteButton = document.getElementById("object-delete");
+const objectDuplicateButton = document.getElementById("object-duplicate");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
 const statusBar = document.getElementById("status-bar");
@@ -367,15 +377,17 @@ function getClosestEdge(mesh, screenPoint) {
         ];
 
         edges.forEach(edge => {
-            const proj1 = BABYLON.Vector3.Project(edge.p1, mesh.getWorldMatrix(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
-            const proj2 = BABYLON.Vector3.Project(edge.p2, mesh.getWorldMatrix(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+            const worldP1 = BABYLON.Vector3.TransformCoordinates(edge.p1, mesh.getWorldMatrix());
+            const worldP2 = BABYLON.Vector3.TransformCoordinates(edge.p2, mesh.getWorldMatrix());
+            const proj1 = BABYLON.Vector3.Project(worldP1, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+            const proj2 = BABYLON.Vector3.Project(worldP2, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
 
-            const dist = BABYLON.Vector2.Distance(screenPoint, proj1) + BABYLON.Vector2.Distance(screenPoint, proj2);
-            const edgeLength = BABYLON.Vector2.Distance(proj1, proj2);
+            const dist = BABYLON.Vector2.Distance(screenPoint, new BABYLON.Vector2(proj1.x, proj1.y)) + BABYLON.Vector2.Distance(screenPoint, new BABYLON.Vector2(proj2.x, proj2.y));
+            const edgeLength = BABYLON.Vector2.Distance(new BABYLON.Vector2(proj1.x, proj1.y), new BABYLON.Vector2(proj2.x, proj2.y));
 
             if (dist < minDistance && dist < edgeLength + 20) {
                 minDistance = dist;
-                closestEdge = { p1: edge.p1, p2: edge.p2, indices: edge.indices.sort() };
+                closestEdge = { p1: worldP1, p2: worldP2, indices: edge.indices.sort() };
             }
         });
     }
@@ -397,6 +409,36 @@ function createEdgeHighlight(p1, p2, color) {
     return tube;
 }
 
+function deselectAll() {
+    selectedMeshes.forEach(mesh => highlightLayer.removeMesh(mesh));
+    selectedMeshes.length = 0;
+    deselectVertices();
+    deselectEdges();
+    deselectFaces();
+    updateStatusBar();
+}
+
+function deselectVertices() {
+    const verticesToDeselect = contextMesh ? selectedVertices.filter(v => v.mesh === contextMesh) : selectedVertices;
+    verticesToDeselect.forEach(v => v.highlight.dispose());
+    selectedVertices = contextMesh ? selectedVertices.filter(v => v.mesh !== contextMesh) : [];
+    updateStatusBar();
+}
+
+function deselectEdges() {
+    const edgesToDeselect = contextMesh ? selectedEdges.filter(e => e.mesh === contextMesh) : selectedEdges;
+    edgesToDeselect.forEach(e => e.highlight.dispose());
+    selectedEdges = contextMesh ? selectedEdges.filter(e => e.mesh !== contextMesh) : [];
+    updateStatusBar();
+}
+
+function deselectFaces() {
+    const facesToDeselect = contextMesh ? selectedFaces.filter(f => f.mesh === contextMesh) : selectedFaces;
+    facesToDeselect.forEach(f => f.highlights.forEach(h => h.dispose()));
+    selectedFaces = contextMesh ? selectedFaces.filter(f => f.mesh !== contextMesh) : [];
+    updateStatusBar();
+}
+
 function updateVertexHighlights() {
     selectedVertices.forEach(v => {
         const positions = v.mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
@@ -416,6 +458,7 @@ let pressTimer;
 let startX, startY;
 let isDragging = false;
 let menuJustOpened = false;
+let contextMesh = null;
 
 canvas.addEventListener("pointerdown", (e) => {
     // Context menu on right-click or long-press
@@ -425,6 +468,21 @@ canvas.addEventListener("pointerdown", (e) => {
         isDragging = false;
         pressTimer = window.setTimeout(() => {
             if (!isDragging) {
+                const pickInfo = scene.pick(scene.pointerX, scene.pointerY);
+                if (pickInfo.hit) {
+                    contextMesh = pickInfo.pickedMesh;
+                    addButton.style.display = "none";
+                    deselectButton.style.display = "flex";
+                    objectButton.style.display = "flex";
+                    deselectAllButton.style.display = "flex";
+                } else {
+                    contextMesh = null;
+                    addButton.style.display = "flex";
+                    deselectButton.style.display = "none";
+                    objectButton.style.display = "none";
+                    deselectAllButton.style.display = "flex";
+                }
+
                 contextMenu.style.display = "flex";
                 contextMenu.style.left = `${e.clientX}px`;
                 contextMenu.style.top = `${e.clientY}px`;
@@ -575,6 +633,8 @@ window.addEventListener("pointerup", (e) => {
     if (!e.target.closest(".context-menu") && !e.target.closest("#gui")) {
         contextMenu.style.display = "none";
         addSubmenu.style.display = "none";
+        deselectSubmenu.style.display = "none";
+        objectSubmenu.style.display = "none";
         fileMenu.style.display = "none";
     }
 });
@@ -588,6 +648,13 @@ addButton.addEventListener("pointerenter", () => {
     const rect = addButton.getBoundingClientRect();
     addSubmenu.style.left = `${rect.right}px`;
     addSubmenu.style.top = `${rect.top}px`;
+});
+
+deselectButton.addEventListener("pointerenter", () => {
+    deselectSubmenu.style.display = "flex";
+    const rect = deselectButton.getBoundingClientRect();
+    deselectSubmenu.style.left = `${rect.right}px`;
+    deselectSubmenu.style.top = `${rect.top}px`;
 });
 
 addSubmenu.addEventListener("click", (e) => {
@@ -609,4 +676,43 @@ addSubmenu.addEventListener("click", (e) => {
     }
     contextMenu.style.display = "none";
     addSubmenu.style.display = "none";
+});
+
+deselectAllButton.addEventListener("click", () => {
+    deselectAll();
+    contextMenu.style.display = "none";
+});
+
+objectButton.addEventListener("pointerenter", () => {
+    objectSubmenu.style.display = "flex";
+    const rect = objectButton.getBoundingClientRect();
+    objectSubmenu.style.left = `${rect.right}px`;
+    objectSubmenu.style.top = `${rect.top}px`;
+});
+
+deselectSubmenu.addEventListener("click", (e) => {
+    if (e.target.id === "deselect-vertices") {
+        deselectVertices();
+    } else if (e.target.id === "deselect-edges") {
+        deselectEdges();
+    } else if (e.target.id === "deselect-faces") {
+        deselectFaces();
+    }
+    contextMenu.style.display = "none";
+    deselectSubmenu.style.display = "none";
+});
+
+objectSubmenu.addEventListener("click", (e) => {
+    if (e.target.id === "object-delete") {
+        if (contextMesh) {
+            contextMesh.dispose();
+        }
+    } else if (e.target.id === "object-duplicate") {
+        if (contextMesh) {
+            const newMesh = contextMesh.clone("duplicated_mesh");
+            newMesh.position.x += 1;
+        }
+    }
+    contextMenu.style.display = "none";
+    objectSubmenu.style.display = "none";
 });

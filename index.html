@@ -71,6 +71,13 @@
             -moz-user-select: none;
             -ms-user-select: none;
             margin: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .arrow {
+            font-size: 12px;
+            margin-left: 10px;
         }
         #debug-overlay {
             position: absolute;
@@ -247,12 +254,24 @@
     </div>
     <canvas id="renderCanvas"></canvas>
     <div id="context-menu" class="context-menu">
-        <button id="add">Add</button>
+        <button id="add">Add <span class="arrow">▶</span></button>
+        <button id="deselect-all">Deselect all</button>
+        <button id="deselect">Deselect <span class="arrow">▶</span></button>
+        <button id="object">Object <span class="arrow">▶</span></button>
+    </div>
+    <div id="object-submenu" class="context-menu">
+        <button id="object-delete">Delete</button>
+        <button id="object-duplicate">Duplicate</button>
     </div>
     <div id="add-submenu" class="context-menu">
         <button>Triangle</button>
         <button>Quad</button>
         <button>Cube</button>
+    </div>
+    <div id="deselect-submenu" class="context-menu">
+        <button id="deselect-vertices">Vertices</button>
+        <button id="deselect-edges">Edges</button>
+        <button id="deselect-faces">Faces</button>
     </div>
     <div id="undo-redo-container">
         <button id="undo">
